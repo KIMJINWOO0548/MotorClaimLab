@@ -6,7 +6,7 @@ import json
 import subprocess
 from pathlib import PurePosixPath
 
-BASE = "docs/evidence/presentation-v2/"
+BASE = "docs/evidence/presentation-v3/"
 SOURCES = {"src/motorclaimlab/report.py", "src/motorclaimlab/presentation.py"}
 
 
@@ -25,7 +25,7 @@ def main():
         return subprocess.check_output(["git", "show", prefix + path])
 
     manifest = json.loads(blob(BASE + "presentation.json"))
-    if manifest.get("model_execution") is not False or manifest.get("renderer_version") != "2.0":
+    if manifest.get("model_execution") is not False or manifest.get("renderer_version") != "3.0":
         raise SystemExit("Unexpected renderer version or model-execution declaration")
     if set(manifest["renderer_sources"]) != SOURCES or set(manifest["inputs"]) != {
         "results",

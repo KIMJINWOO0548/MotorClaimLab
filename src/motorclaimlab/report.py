@@ -17,7 +17,7 @@ from matplotlib.backends.backend_svg import FigureCanvasSVG
 from matplotlib.figure import Figure
 
 _MODELS = ("mean", "poisson_glm", "poisson_hgb")
-RENDERER_VERSION = "2.0"
+RENDERER_VERSION = "3.0"
 _MODEL_LABELS = {
     "mean": "Training mean",
     "poisson_glm": "Poisson GLM",
@@ -154,10 +154,10 @@ def _uncertainty_svg(results: dict, directory: Path | None = None) -> str:
         point, lower, upper = values
         zero = axis.axvline(0, color="#596574", linewidth=1.2, linestyle="--")
         zero.set_gid("zero-reference")
-        interval = axis.hlines(0.5, lower, upper, colors="#16727c", linewidth=4)
+        interval = axis.hlines(0.5, lower, upper, colors="#315bdf", linewidth=5)
         interval.set_gid("paired-ci")
-        axis.vlines([lower, upper], 0.44, 0.56, colors="#16727c", linewidth=1.4)
-        (marker,) = axis.plot(point, 0.5, marker="D", color="#152b40", markersize=7)
+        axis.vlines([lower, upper], 0.44, 0.56, colors="#315bdf", linewidth=1.4)
+        (marker,) = axis.plot(point, 0.5, marker="D", color="#102c3b", markersize=8)
         marker.set_gid("paired-point")
         axis.annotate(
             f"{lower:.5f}",
@@ -214,25 +214,34 @@ def _figures(results: dict, directory: Path | None = None) -> tuple[str, str]:
     plot_vals = [
         float(v) if v is not None and math.isfinite(float(v)) else float("nan") for v in vals
     ]
-    bars = axis.bar(
+    bars = axis.barh(
         [_MODEL_LABELS[name] for name in _MODELS],
         plot_vals,
         color=[
-            "#16727c" if name == results.get("selected_model") else "#9aa8b5" for name in _MODELS
+            "#315bdf" if name == results.get("selected_model") else "#b9c7d3" for name in _MODELS
         ],
+        height=0.48,
     )
-    axis.set_title("Test-set Poisson deviance")
-    axis.set_ylabel("Exposure-weighted deviance")
-    axis.grid(axis="y", alpha=0.22)
+    axis.set_title(
+        "Test-set Poisson deviance", loc="left", pad=18, color="#102c3b", fontweight="bold"
+    )
+    axis.set_xlabel("Exposure-weighted deviance · lower is better")
+    axis.invert_yaxis()
+    axis.margins(x=0.22, y=0.25)
+    axis.grid(axis="x", alpha=0.16)
+    axis.tick_params(axis="y", length=0, pad=10, colors="#102c3b")
+    for name in ("top", "right", "left"):
+        axis.spines[name].set_visible(False)
     axis.set_axisbelow(True)
     for bar, value in zip(bars, vals, strict=True):
         axis.annotate(
-            _number(value),
-            (bar.get_x() + bar.get_width() / 2, bar.get_height()),
-            xytext=(0, 4),
+            _number(value, 6),
+            (bar.get_width(), bar.get_y() + bar.get_height() / 2),
+            xytext=(8, 0),
             textcoords="offset points",
-            ha="center",
-            fontsize=9,
+            va="center",
+            fontsize=10,
+            color="#102c3b",
         )
     comparison_svg = _figure_svg(comparison, "model-comparison")
     if directory is not None:
@@ -276,20 +285,31 @@ def _figures(results: dict, directory: Path | None = None) -> tuple[str, str]:
             observed_rates.append(float("nan"))
             predicted_rates.append(float("nan"))
             incomplete_bins.append(str(bin_number))
-    calibration = Figure(figsize=(8.2, 4.2), layout="constrained")
+    calibration = Figure(figsize=(8.2, 4.9), layout="constrained", facecolor="#102c3b")
     axis = calibration.subplots()
+    axis.set_facecolor("#102c3b")
     positions = list(range(len(labels)))
-    axis.plot(positions, observed_rates, marker="o", color="#087e8b", label="Observed rate")
+    axis.plot(
+        positions,
+        observed_rates,
+        marker="o",
+        color="#8ec7ef",
+        label="Observed rate",
+        linewidth=2.8,
+        markersize=6,
+    )
     axis.plot(
         positions,
         predicted_rates,
         marker="s",
         linestyle="--",
-        color="#c76d3a",
+        color="#ff956d",
         label="Predicted rate",
+        linewidth=2.3,
+        markersize=5,
     )
     for x, value in zip(positions, observed_rates, strict=True):
-        if not math.isfinite(value):
+        if not math.isfinite(value) or x not in (0, len(labels) - 1):
             continue
         axis.annotate(
             _number(value, 3),
@@ -298,9 +318,10 @@ def _figures(results: dict, directory: Path | None = None) -> tuple[str, str]:
             textcoords="offset points",
             ha="center",
             fontsize=8,
+            color="#8ec7ef",
         )
     for x, value in zip(positions, predicted_rates, strict=True):
-        if not math.isfinite(value):
+        if not math.isfinite(value) or x not in (0, len(labels) - 1):
             continue
         axis.annotate(
             _number(value, 3),
@@ -309,21 +330,33 @@ def _figures(results: dict, directory: Path | None = None) -> tuple[str, str]:
             textcoords="offset points",
             ha="center",
             fontsize=8,
+            color="#ff956d",
         )
     axis.set_xticks(positions, labels)
-    axis.set_title(f"Calibration by prediction bin — {_MODEL_LABELS.get(selected, selected)}")
-    axis.set_xlabel("Prediction bin")
-    axis.set_ylabel("Claim frequency (claims / exposure year)")
-    axis.grid(alpha=0.22)
-    axis.legend(frameon=False)
+    axis.set_title(
+        f"Calibration by prediction bin — {_MODEL_LABELS.get(selected, selected)}",
+        loc="left",
+        color="white",
+        fontsize=11,
+        pad=18,
+    )
+    axis.set_xlabel("Prediction bin (rank, not time)", color="#c4d4dd", labelpad=10)
+    axis.set_ylabel("Claim frequency (claims / exposure year)", color="#c4d4dd", labelpad=10)
+    axis.tick_params(colors="#c4d4dd", length=0, pad=8)
+    axis.margins(x=0.1, y=0.18)
+    axis.set_axisbelow(True)
+    axis.grid(axis="y", color="#c4d4dd", alpha=0.14)
+    axis.legend(frameon=False, labelcolor="#ffffff", loc="upper left")
+    for name, spine in axis.spines.items():
+        spine.set_visible(name == "bottom")
+        spine.set_color("#547383")
     if incomplete_bins:
-        axis.text(
-            0.02,
-            0.95,
+        calibration.suptitle(
             "Incomplete calibration bins: " + ", ".join(incomplete_bins),
-            transform=axis.transAxes,
-            va="top",
-            fontsize=9,
+            x=0.02,
+            ha="left",
+            fontsize=10,
+            color="#ff956d",
         )
     calibration_svg = _figure_svg(calibration, "calibration")
     if directory is not None:
@@ -501,7 +534,7 @@ def _calibration_table(rows: list[dict]) -> str:
 
 
 def render_report(results: dict) -> str:
-    """Render saved measurements and their provenance as a restrained research document."""
+    """Present saved measurements through an automotive-inspired visual study."""
     study, audit = results.get("study", {}), results.get("audit", {})
     provenance = results.get("provenance", {})
     selected = str(results.get("selected_model", "N/A"))
@@ -556,38 +589,57 @@ def render_report(results: dict) -> str:
     return f"""<!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MotorClaimLab · 모델 비교 보고서</title><style>
-:root {{color-scheme:light; --ink:#1d2938; --muted:#526171; --line:#d8dfe6; --accent:#176c77;}}
-* {{box-sizing:border-box;}} body {{margin:0; color:var(--ink); background:#fff; font:15px/1.6 system-ui,"Segoe UI",sans-serif;}}
-main {{max-width:1120px; margin:auto; padding:28px clamp(16px,4vw,40px) 48px;}}
-header {{border-bottom:1px solid var(--line); padding-bottom:18px;}} h1 {{font-size:clamp(1.5rem,3vw,2rem); margin:8px 0; line-height:1.25;}}
-h2 {{font-size:1.15rem; margin:0 0 12px;}} h3 {{font-size:1rem;}} section {{padding:26px 0; border-bottom:1px solid var(--line);}}
-p {{margin:10px 0;}} .muted,.run-context,footer {{color:var(--muted);}} .run-context {{display:flex; flex-wrap:wrap; gap:6px 22px; font-size:.9rem;}}
-nav {{display:flex; flex-wrap:wrap; gap:18px; font-size:.9rem;}} a {{color:var(--accent); text-underline-offset:3px;}}
-.table-wrap {{overflow-x:auto; margin:12px 0 18px;}} table {{width:100%; min-width:680px; border-collapse:collapse; font-variant-numeric:tabular-nums;}}
-caption {{text-align:left; font-weight:600; margin-bottom:8px;}} th,td {{padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:top;}}
-th {{text-align:left; font-weight:600;}} td {{text-align:right; white-space:nowrap;}} thead {{background:#f4f6f8; font-size:.87rem;}}
-.selected {{background:#f0f7f8;}} .selected th {{border-left:3px solid var(--accent);}} .selection-note {{display:block; font-size:.78rem; color:var(--accent); font-weight:500;}}
-details {{margin:14px 0; padding:10px 0; border-top:1px solid var(--line);}} summary {{cursor:pointer; font-weight:600;}}
-pre {{overflow-x:auto; background:#f6f7f9; padding:14px; font-size:.82rem;}} code {{overflow-wrap:anywhere;}}
-figure {{margin:14px 0;}} figcaption {{color:var(--muted); font-size:.9rem;}} svg {{display:block; width:100%; height:auto;}}
-.notice {{border-left:3px solid #8e6d37; padding-left:12px;}} :focus-visible {{outline:2px solid var(--accent); outline-offset:3px;}}
-footer {{font-size:.85rem; padding-top:22px;}} li {{margin:5px 0;}} .condition-list dt {{font-weight:600;}} .condition-list dd {{margin:0 0 10px;}}
-</style></head><body><main>
-<header><nav aria-label="보고서 구간"><a href="#selection">모델 비교</a><a href="#uncertainty">불확실성</a><a href="#calibration">보정과 오차</a><a href="#provenance">출처</a></nav>
-<h1>자동차보험 청구 빈도 · 모델 비교</h1><p class="muted">{_e(_source_description(results))} 현재 국내 보험 업무의 적합성 또는 효과를 입증하지 않았습니다.</p>
-<div class="run-context"><span>{_integer(study.get("rows"))}행 · {_e(study.get("data_kind", "기록 없음"))}</span><span>{"표본 실행" if study.get("sampled") is True else ("전체 자료 실행" if study.get("sampled") is False else "표본 여부 기록 없음")}</span><span>노출 {_number(audit.get("exposure"), 2)}년</span><span>seed {_e(study.get("seed", "기록 없음"))}</span></div>
-<div class="run-context"><span>Data <code>{_e(source_prefix)}</code></span><span>Analysis code <code>{_e(code_prefix)}</code></span><span>Renderer {RENDERER_VERSION}</span></div></header>
-<section aria-labelledby="selection"><h2 id="selection">세 모델 비교</h2>
+:root {{color-scheme:light; --ink:#102c3b; --muted:#526574; --line:#d5dfe5; --accent:#315bdf; --paper:#f2f5f7; --coral:#ff956d;}}
+* {{box-sizing:border-box;}} html {{scroll-padding-top:24px;}} body {{margin:0; color:var(--ink); background:var(--paper); font:16px/1.7 "Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif; -webkit-font-smoothing:antialiased;}}
+a {{color:var(--accent); text-underline-offset:4px;}} p {{margin:12px 0; max-width:78ch;}} strong {{font-weight:750;}}
+.skip-link {{position:absolute; left:20px; top:-90px; background:white; padding:12px 20px; z-index:2;}} .skip-link:focus {{top:12px;}}
+.study-hero {{background:var(--ink); color:white; padding:0 clamp(20px,5vw,72px); border-bottom:6px solid var(--coral);}}
+.topbar {{max-width:1280px; margin:auto; min-height:88px; display:flex; align-items:center; justify-content:space-between; gap:20px; border-bottom:1px solid #547383;}}
+.wordmark {{display:flex; align-items:center; gap:12px; font-family:Bahnschrift,"Malgun Gothic",sans-serif; font-size:24px; font-weight:700; letter-spacing:-.8px;}}
+.lane-mark {{width:29px; height:30px; display:flex; gap:4px; transform:skew(-19deg);}} .lane-mark i {{display:block; width:7px; background:var(--coral);}} .lane-mark i:nth-child(2) {{height:22px; align-self:end;}} .lane-mark i:nth-child(3) {{height:14px; align-self:end;}}
+nav {{display:flex; flex-wrap:wrap; gap:4px 22px; font-size:.88rem;}} nav a {{color:#e2edf3; text-decoration:none; padding:10px 0; border-bottom:2px solid transparent;}} nav a:hover {{color:var(--coral); border-color:var(--coral);}}
+.hero-frame {{max-width:1280px; margin:auto; display:grid; grid-template-columns:.9fr 1.25fr; align-items:center; gap:36px; padding:60px 0 42px;}}
+h1 {{font-size:clamp(2.3rem,4.4vw,4.6rem); line-height:1.23; letter-spacing:-.075em; font-weight:850; margin:0 0 26px; word-break:keep-all;}}
+.hero-copy>p {{color:#c4d4dd; max-width:38ch; font-size:.99rem;}} .hero-action {{display:inline-flex; margin-top:20px; padding:11px 22px; color:var(--ink); background:var(--coral); font-weight:750; text-decoration:none; border-radius:5px;}} .hero-action:hover {{background:#ffad8f;}}
+.hero-plot {{min-width:0; margin:0;}} .hero-plot figcaption {{color:#c4d4dd; font-size:.82rem; margin:10px 0 0; padding-left:24px; max-width:68ch;}}
+.study-context {{max-width:1280px; margin:auto; display:flex; flex-wrap:wrap; gap:10px 30px; padding:22px 0; border-top:1px solid #547383; font-size:.85rem; color:#c4d4dd;}} .study-context strong {{color:white;}}
+main {{max-width:1280px; margin:auto; padding:0 clamp(20px,5vw,56px) 48px;}}
+section {{padding:48px 0; border-bottom:1px solid var(--line); scroll-margin-top:24px;}}
+h2 {{font-size:clamp(1.5rem,2.5vw,2.2rem); line-height:1.4; letter-spacing:-.045em; margin:0 0 16px; word-break:keep-all;}} h3 {{font-size:1.1rem;}}
+.section-intro {{display:grid; grid-template-columns:1fr 1.15fr; gap:32px; align-items:start; margin-bottom:24px;}} .section-intro p {{margin:0;}}
+.analysis-pair {{display:grid; grid-template-columns:1.05fr 1fr; gap:30px; align-items:center; margin:28px 0; padding:24px; background:white; border-radius:10px; border:1px solid var(--line);}} .analysis-pair figure {{margin:0; min-width:0;}}
+.analysis-pair h3 {{margin:0 0 8px;}} .analysis-pair p {{font-size:.87rem; color:var(--muted);}}
+.muted,.run-context,footer {{color:var(--muted);}} .run-context {{display:flex; flex-wrap:wrap; gap:6px 22px; font-size:.82rem; margin:12px 0;}}
+.table-wrap {{overflow-x:auto; margin:20px 0; background:white; border:1px solid var(--line); border-radius:8px;}} table {{width:100%; min-width:680px; border-collapse:collapse; font-variant-numeric:tabular-nums;}}
+caption {{text-align:left; font-weight:650; padding:16px 18px; font-size:.94rem;}} th,td {{padding:14px 16px; border-bottom:1px solid var(--line); vertical-align:middle;}}
+th {{text-align:left; font-weight:600;}} td {{text-align:right; white-space:nowrap;}} thead {{background:#eaf0f4; font-size:.8rem; color:#3b5263;}} tbody tr:last-child>* {{border-bottom:0;}}
+.selected {{background:#edf2ff;}} .selected th {{border-left:4px solid var(--accent);}} .selection-note {{display:block; margin-top:4px; font-size:.75rem; color:var(--accent); font-weight:600;}}
+details {{margin:16px 0; padding:16px 0; border-top:1px solid var(--line);}} summary {{cursor:pointer; font-weight:650; padding:4px 0;}} summary:hover {{color:var(--accent);}}
+pre {{overflow-x:auto; background:#e7edf2; padding:18px; font-size:.8rem; border-radius:6px;}} code {{overflow-wrap:anywhere;}}
+figure {{margin:24px 0;}} figcaption {{color:var(--muted); font-size:.87rem; margin:10px 0;}} svg {{display:block; width:100%; height:auto;}}
+.notice {{border-left:3px solid #986013; padding-left:14px;}} :focus-visible {{outline:3px solid var(--accent); outline-offset:4px;}} .study-hero :focus-visible {{outline-color:var(--coral);}}
+.condition-list {{display:grid; grid-template-columns:160px 1fr; gap:16px 24px; padding:24px 0;}} .condition-list dt {{font-weight:700;}} .condition-list dd {{margin:0;}}
+#limits {{border-top:3px solid var(--ink);}} li {{margin:10px 0; max-width:85ch;}} footer {{font-size:.8rem; padding-top:28px;}}
+@media (max-width:900px) {{.hero-frame {{grid-template-columns:1fr; gap:30px; padding-top:40px;}} .hero-copy>p {{max-width:62ch;}} .hero-plot {{max-width:800px;}} .analysis-pair,.section-intro {{grid-template-columns:1fr; gap:20px;}} .topbar {{align-items:flex-start; flex-direction:column; gap:4px; padding:20px 0 10px;}} h1 {{font-size:clamp(2.3rem,7vw,4rem);}}}}
+@media (max-width:520px) {{.study-hero {{padding:0 18px;}} .wordmark {{font-size:22px;}} nav {{gap:2px 17px; font-size:.8rem;}} .hero-frame {{padding:32px 0; gap:24px;}} .hero-plot figcaption {{padding-left:0;}} .study-context {{gap:8px 18px; font-size:.78rem;}} main {{padding:0 18px 32px;}} section {{padding:34px 0;}} .analysis-pair {{padding:12px; gap:12px;}} .condition-list {{grid-template-columns:1fr; gap:6px;}} .condition-list dd {{margin-bottom:14px;}}}}
+@media (prefers-reduced-motion:reduce) {{*,*::before,*::after {{animation:none!important; transition:none!important; scroll-behavior:auto!important;}}}}
+@media print {{body {{background:white; font-size:10pt;}} .skip-link,nav,.hero-action {{display:none;}} .study-hero {{print-color-adjust:exact; -webkit-print-color-adjust:exact;}} .hero-frame {{grid-template-columns:1fr 1fr; padding:24px 0;}} h1 {{font-size:25pt;}} main {{padding:0;}} .analysis-pair,.section-intro {{display:block;}} section {{padding:20px 0;}} .table-wrap {{overflow:visible; border:0;}} table {{min-width:0; font-size:8pt;}} th,td {{padding:5px; white-space:normal;}} details>pre {{display:block;}} figure,tr {{break-inside:avoid;}}}}
+</style></head><body><a class="skip-link" href="#report-content">분석 본문으로 건너뛰기</a>
+<header class="study-hero"><div class="topbar"><div class="wordmark"><span class="lane-mark" aria-hidden="true"><i></i><i></i><i></i></span>MotorClaimLab</div><nav aria-label="보고서 구간"><a href="#selection">모델 비교</a><a href="#uncertainty">불확실성</a><a href="#calibration">보정과 오차</a><a href="#provenance">출처</a></nav></div>
+<div class="hero-frame"><div class="hero-copy"><h1>청구 건수 너머,<br>위험을 읽는 방법.</h1><p>가입 기간이 다른 계약을 어떻게 비교할까요? 노출 기간을 반영한 세 모델의 예측과, 평균 오차 뒤에 남은 과소·과대예측을 살펴봅니다.</p><p>{_e(_source_description(results))} 현재 국내 보험 업무의 적합성 또는 효과를 입증하지 않았습니다.</p><a class="hero-action" href="#selection">세 모델의 결과 비교하기</a></div>
+<figure class="hero-plot">{calibration}<figcaption>예측 순위별 관측(실선·원)과 예측(파선·사각형). 청구 / 노출 연수. 가로축은 시간 흐름이 아닌 예측 순위입니다. <a href="#calibration" style="color:#ff956d">보정 구간의 실제 값 보기</a></figcaption></figure></div>
+<div class="study-context"><span><strong>{_integer(study.get("rows"))}</strong> 계약 행</span><span>노출 <strong>{_number(audit.get("exposure"), 2)}</strong>년</span><span>{"전체 자료 실행" if study.get("sampled") is False else ("표본 실행" if study.get("sampled") is True else "표본 여부 기록 없음")}</span><span>{_e(study.get("data_kind", "기록 없음"))} / seed {_e(study.get("seed", "기록 없음"))}</span></div></header>
+<main id="report-content" tabindex="-1"><section aria-labelledby="selection"><div class="section-intro"><h2 id="selection">어떤 모델이<br>얼마나 덜 틀렸을까?</h2>
 <p>선택 모델: <strong>{_e(selected)}</strong>. 모델 선택에는 <strong>{_e(study.get("selection_split", "기록 없음"))}</strong> 분할만 사용했습니다. Test results는 선택 이후 평가입니다.</p>
+</div><figure><figcaption>같은 테스트 자료, 같은 노출 가중 기준. 낮은 편차는 이 분할에서 더 작은 예측 오차를 뜻합니다.</figcaption>{comparison}</figure>
 {_comparison_table(results)}
 <p class="muted">편차와 가중 MAE는 낮을수록 작게 틀립니다. 관측/예측 비율 1은 합계 일치이며, 집단별 보정이나 조건검사 통과를 의미하지 않습니다.</p>
+<div class="run-context"><span>Data <code>{_e(source_prefix)}</code></span><span>Analysis code <code>{_e(code_prefix)}</code></span><span>Renderer {RENDERER_VERSION}</span></div>
 {_provenance(results)}
-<details><summary>Test-set Poisson deviance 차트</summary><figure><figcaption>노출 가중 포아송 편차 · 낮을수록 작음</figcaption>{comparison}</figure></details></section>
-<section aria-labelledby="uncertainty"><h2 id="uncertainty">선택 모델 − 평균 기준 · 쌍체 불확실성</h2>{interval_text}
-<figure><figcaption>0은 편차 차이 없음, 음수는 선택 모델에 유리합니다. 하나의 쌍체 차이 구간이며 모델별 오차막대가 아닙니다.</figcaption>{interval}</figure>
-<p class="muted">같은 정책 인덱스로 재표집한 구간입니다. 현재 분할과 이미 적합된 모델(frozen fits)에 조건부이며, 재학습·자료 수집·미래 시점의 불확실성을 포함하지 않습니다.</p></section>
-<section aria-labelledby="calibration"><h2 id="calibration">실측·예측 보정과 집단별 오차</h2>
-<figure><figcaption>예측 순위별 관측(실선·원)과 예측(파선·사각형). 단위는 청구 / 노출 연수입니다.</figcaption>{calibration}</figure>
+</section>
+<section aria-labelledby="uncertainty"><h2 id="uncertainty">차이는 얼마나 확실할까?</h2>{interval_text}
+<div class="analysis-pair"><figure>{interval}<figcaption>선택 모델 − 평균 기준. 하나의 쌍체 차이 구간이며 모델별 오차막대가 아닙니다.</figcaption></figure><div><h3>0을 기준으로 읽는 비교</h3><p>0은 편차 차이 없음, 음수는 선택 모델에 유리합니다. 같은 정책 인덱스로 재표집한 구간입니다.</p><p>현재 분할과 이미 적합된 모델(frozen fits)에 조건부이며, 재학습·자료 수집·미래 시점의 불확실성을 포함하지 않습니다.</p></div></div></section>
+<section aria-labelledby="calibration"><div class="section-intro"><h2 id="calibration">평균이 좋아져도,<br>오차는 남습니다.</h2><p>첫 화면의 관측·예측 곡선을 실제 값으로 확인합니다. 선택 모델을 예측 순위로 나눈 구간과, 연령·차량·지역 집단의 오차를 함께 읽으세요. 합계가 비슷하더라도 구간마다 과소·과대예측이 남을 수 있습니다.</p></div>
 {_calibration_table(calibration_rows)}
 <p>Sparse: 행 수 50개 미만 또는 노출 합계 10년 미만. 각 행의 표시는 유지하며, 해당 구간의 불확실성에 주의합니다.</p>
 {_metric_table(segments, "Selected-model segment errors; sparse groups need caution")}</section>

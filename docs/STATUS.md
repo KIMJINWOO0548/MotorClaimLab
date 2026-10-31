@@ -23,3 +23,7 @@ No external human review, operational use or measured business outcome is claime
 ## Renderer 2.0 supplement
 
 The saved experiment is unchanged. New renderer-only files are in `docs/evidence/presentation-v2/`; provenance and eight derived artifacts have a separate manifest. Local full suite: **104 passed**, Ruff/format and isolated wheel rendering exit 0. Implementation `782018f` passed actual CI `41223891243` on Windows 3.12 and Linux 3.12/3.13, including original and derived Git-blob checks. [PRESENTATION_V2_VALIDATION.md](PRESENTATION_V2_VALIDATION.md) records tools, licenses, commands and limitations. Browser execution remains SKIPPED/DENIED; no workaround occurred.
+
+## Renderer 3.0 visual supplement
+
+The explicit user request for a bolder, distinctive UI is implemented in a chart-led petrol/coral opening and light analytical content. The local full suite now passes **108 tests**, including a reproduced missing-calibration warning/legend overlap regression and offline contrast/navigation checks. Outputs are separate in `docs/evidence/presentation-v3/`; original and v2 evidence remain unchanged. [PRESENTATION_V3_VALIDATION.md](PRESENTATION_V3_VALIDATION.md) records packaging, publication and CI results when actually observed. Actual browser layout/keyboard/responsive/print/accessibility execution remains SKIPPED/DENIED; no alternate server or browser surface was used.

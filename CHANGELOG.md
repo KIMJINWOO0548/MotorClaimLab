@@ -1,5 +1,14 @@
 # Changelog
 
+## Renderer 3.0 — 2026-11-01 KST
+
+- Distinctive automotive-inspired opening, original lane mark and large Korean typography with the saved observed/predicted curve as the focal point.
+- Horizontal model comparison, light analytical tables, native section/skip navigation, responsive, print and reduced-motion CSS.
+- Explicit high-contrast chart themes and distinct series shapes/line styles; missing-calibration notice reserves space above the plot after an independently reproduced overlap.
+- Original experiment, ten artifact hashes and complete presentation-v2 preserved; eight new derived outputs use a separate renderer 3.0 manifest.
+- 108 local tests passed. Current Git-blob guard advances to v3; historical v2 source provenance remains in its unchanged manifest and Git history.
+- UI/UX Pro Max/Frontend Design, primary-site research, connected GitHub/Context7 and routed research/review recorded in UI_VISUAL_REFERENCES.md. No new dependency, runtime service or model execution.
+
 ## Renderer 2.0 — 2026-11-01 KST
 
 - Compact three-model comparison and native provenance disclosure, informed by cited MLflow/Evidently patterns.

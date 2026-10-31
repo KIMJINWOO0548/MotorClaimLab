@@ -1,0 +1,118 @@
+{
+  "repository": "https://github.com/KIMJINWOO0548/MotorClaimLab",
+  "branch": "main",
+  "baseline_commit": "d1ceb97079462c5e36f2de13028008fe4a1acbf3",
+  "renderer_version": "3.0",
+  "renderer_sha256": "04ba99e12b1ef5aa6ec65459e06ac8445017c8a0252ff64706990d784b2dbd81",
+  "frozen_inputs": {
+    "results": {
+      "path": "docs/evidence/benchmark/results.json",
+      "sha256": "3585e11b57460165521a43db7b21d26dd11330c47affcec820c450c0781e1a74"
+    },
+    "selection": {
+      "path": "docs/evidence/benchmark/selection.json",
+      "sha256": "987923727958b7d73fd8a01bb768dce566e58008a01848d2108affdedf6271e2"
+    }
+  },
+  "model_execution": false,
+  "red_green": [
+    {
+      "scope": "new visual opening and theme",
+      "red_exit": 1,
+      "red_failed": 2,
+      "red_passed": 1
+    },
+    {
+      "scope": "missing calibration warning placement",
+      "red_exit": 1,
+      "red_failed": 1,
+      "green_targeted_exit": 0,
+      "green_targeted_passed": 29
+    }
+  ],
+  "full_suite": {
+    "command": "python -m pytest -q",
+    "exit_code": 0,
+    "passed": 108,
+    "seconds": 23.41,
+    "thread_limit": 2
+  },
+  "lint_exit_code": 0,
+  "format_exit_code": 0,
+  "build_exit_code": 0,
+  "distribution_check_exit_code": 0,
+  "isolated_wheel_and_preservation": {
+    "exit_code": 0,
+    "preserved_prior_git_files": 21,
+    "frozen_inputs": 2,
+    "derived_artifact_hashes_verified": 8,
+    "wheel_outside_checkout": true,
+    "isolated_python": true,
+    "wheel_import_site_packages": true,
+    "renderer_version": "3.0",
+    "renderer_sha256": "04ba99e12b1ef5aa6ec65459e06ac8445017c8a0252ff64706990d784b2dbd81",
+    "wheel_outputs_identical_to_published": true,
+    "model_execution": false,
+    "browser_execution": "SKIPPED/DENIED"
+  },
+  "probe_failure": {
+    "product_render_exit": 0,
+    "auxiliary_import_path": "UnicodeDecodeError due to missing UTF-8 mode",
+    "correction": "explicit -X utf8 subprocess, rerun exit 0"
+  },
+  "tools": {
+    "skills": [
+      "UI/UX Pro Max",
+      "Frontend Design",
+      "Uncodixfy",
+      "Ponytail",
+      "Codex Auto Model Router"
+    ],
+    "mcp": [
+      "Context7 resolve_library_id + query_docs",
+      "GitHub github_fetch_file"
+    ],
+    "references": [
+      "Formula 1 official live timing/graphics explanation",
+      "Stripe official home charts support",
+      "Observable official homepage"
+    ],
+    "routes": [
+      {
+        "task": "visual reference research",
+        "actual_model": "gpt-6-luna",
+        "effort": "high",
+        "status": "completed"
+      },
+      {
+        "task": "independent offline review",
+        "actual_model": "gpt-6.1-sol",
+        "effort": "medium",
+        "status": "completed"
+      }
+    ]
+  },
+  "visual_checks": {
+    "actual_matplotlib_png_inspection": [
+      "calibration",
+      "model-comparison",
+      "paired-difference",
+      "incomplete calibration after fix"
+    ],
+    "browser": "SKIPPED/DENIED; no workaround",
+    "source_site_image_inspection": "NOT COMPLETED: web image open failed HTTP 400 and one direct CDN retry inaccessible"
+  },
+  "environment": {
+    "python": "3.12.10",
+    "matplotlib": "3.11.2",
+    "numpy": "2.5.4",
+    "pillow": "13.0.0",
+    "pytest": "9.2.0",
+    "ruff": "0.17.3"
+  },
+  "ci": {
+    "status": "PENDING publication",
+    "head_sha": null,
+    "url": null
+  }
+}

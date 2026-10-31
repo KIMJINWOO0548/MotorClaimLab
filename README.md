@@ -4,9 +4,9 @@
 
 보험 가입 기간이 다른 계약을 공정하게 비교하면서, 단순 평균·포아송 회귀·부스팅 모델의 예측과 집단별 과소·과대예측을 평가합니다. 채용 포트폴리오를 위한 개인 프로젝트이며 KB손해보험 또는 다른 보험사의 의뢰·검증·운영 시스템이 아닙니다.
 
-현재 단계: **전체 678,013행의 동결 실험과 renderer 2.0**. 로컬 전체 **104개 테스트**와 [renderer의 실제 3개 CI 작업](https://github.com/KIMJINWOO0548/MotorClaimLab/actions/runs/41223891243)이 통과했습니다. 검증 분할에서 선택한 부스팅 모델의 테스트 포아송 편차가 평균 기준 모델 대비 **8.21% 낮았습니다**. 과거 프랑스 자료의 고정 분할 결과이며 업무 효과를 주장하지 않습니다.
+현재 단계: **전체 678,013행의 동결 실험과 renderer 3.0**. 로컬 전체 **108개 테스트**가 통과했습니다. 검증 분할에서 선택한 부스팅 모델의 테스트 포아송 편차가 평균 기준 모델 대비 **8.21% 낮았습니다**. 과거 프랑스 자료의 고정 분할 결과이며 업무 효과를 주장하지 않습니다.
 
-새 [presentation v2 HTML](docs/evidence/presentation-v2/report.html)은 세 모델 비교표, 데이터·코드·seed·split 출처 접기, 0 기준선이 있는 쌍체 구간을 제공합니다. MLflow·Evidently·scikit-learn에서 채택한 패턴과 제외한 부분은 [실제 적용 기록](docs/REFERENCE_ADOPTION.md)에 있습니다. 새 UI는 재학습 없이 같은 결과 JSON에서 파생했으며 [별도 renderer·입력·출력 해시](docs/evidence/presentation-v2/presentation.json)로 추적합니다. 원래 10개 실험 증거와 예상 해시는 보존했습니다.
+새 [presentation v3 HTML](docs/evidence/presentation-v3/report.html)은 자동차 계기의 선명한 대비를 참고한 첫 화면, 실제 관측·예측 곡선, 세 모델 비교표와 0 기준선이 있는 쌍체 구간을 제공합니다. [시각 설계와 공식 서비스 참고 기록](docs/UI_VISUAL_REFERENCES.md), [검증 결과](docs/PRESENTATION_V3_VALIDATION.md)를 확인하세요. MLflow·Evidently·scikit-learn에서 채택한 분석 보고서 패턴은 [기존 적용 기록](docs/REFERENCE_ADOPTION.md)에 있습니다. 재학습 없이 같은 결과 JSON에서 파생했으며 [renderer·입력·출력 해시](docs/evidence/presentation-v3/presentation.json)로 추적합니다. 원래 10개 실험 증거와 예상 해시, 이전 presentation-v2는 보존했습니다.
 
 | 모델 | 검증 포아송 편차 | 테스트 포아송 편차 | 테스트 관측 / 예측 청구 |
 | --- | ---: | ---: | ---: |
@@ -74,7 +74,7 @@ OpenML 원본 **678,013행·12열**, 청구 **36,102건**, 노출 합계 **358,4
 
 `check_evidence.py`는 Git 체크아웃에서 실행하며 실제 Git blob과 공개 증거의 SHA-256을 대조합니다. 이 검사는 바이트 일치만 확인하며 자료 권리·저자·과학적 타당성을 인증하지 않습니다.
 
-`check_presentation.py`는 새 표현의 동결 입력·renderer 소스·산출물을 별도로 대조합니다. [표현 개선 설계](docs/PRESENTATION_V2.md)는 기존 실험의 모델 선택·평가와 구분됩니다.
+`check_presentation.py`는 현재 v3 표현의 동결 입력·renderer 소스·산출물을 별도로 대조합니다. [표현 개선 설계](docs/PRESENTATION_V3.md)는 기존 실험의 모델 선택·평가와 구분됩니다. 이전 v2는 원래 manifest와 Git 이력으로 보존합니다.
 
 ## 연구 경계
 

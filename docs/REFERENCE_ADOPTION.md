@@ -2,6 +2,8 @@
 
 Updated 2026-11-01. This note records upstream patterns considered for the offline report. References informed design choices; no upstream source code, asset, logo, package, service, or result number is copied into MotorClaimLab.
 
+The implementation notes below describe renderer 2.0. The later user-requested expressive visual direction is recorded separately in [UI_VISUAL_REFERENCES.md](UI_VISUAL_REFERENCES.md); renderer 3.0 retains the analytical patterns and changes the opening, layout and chart styling.
+
 ## Sources and bounded application
 
 | Reference (primary source) | Verified license | Useful pattern | Actual local application | Rejected parts and reason |

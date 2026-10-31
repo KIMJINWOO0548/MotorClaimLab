@@ -133,11 +133,11 @@ def test_saved_render_preserves_inputs_and_records_separate_renderer(tmp_path, m
         encoding="utf-8",
     )
     before = {p: p.read_bytes() for p in [source, selection]}
-    output = tmp_path / "presentation-v2"
+    output = tmp_path / "presentation-v3"
     manifest = render_saved(source, output, selection)
     assert all(path.read_bytes() == contents for path, contents in before.items())
     assert json.loads(source.read_text()) == original
-    assert manifest["model_execution"] is False and manifest["renderer_version"] == "2.0"
+    assert manifest["model_execution"] is False and manifest["renderer_version"] == "3.0"
     assert manifest["inputs"]["results"]["sha256"] == hashlib.sha256(before[source]).hexdigest()
     assert (
         manifest["inputs"]["selection"]["sha256"] == hashlib.sha256(before[selection]).hexdigest()
