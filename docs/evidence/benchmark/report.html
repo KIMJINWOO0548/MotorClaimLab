@@ -1,0 +1,797 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MotorClaimLab | 빈도 분석 보고서</title>
+<style>
+:root { color-scheme: light; --ink:#182536; --muted:#526174; --line:#d9e1e9; --panel:#f4f7fa; --accent:#087e8b; }
+* { box-sizing:border-box; } body { margin:0; color:var(--ink); font:16px/1.6 system-ui,"Segoe UI",sans-serif; background:#edf2f6; }
+main { max-width:1120px; margin:auto; padding:clamp(18px,4vw,48px); background:white; }
+h1,h2,h3 { line-height:1.25; } h1 { font-size:clamp(2rem,5vw,3.2rem); margin:.2em 0; }
+h2 { margin-top:2.2em; padding-bottom:.4em; border-bottom:1px solid var(--line); }
+.eyebrow { color:var(--accent); font-weight:700; letter-spacing:.06em; } .lede,.muted { color:var(--muted); }
+.notice { border-left:5px solid #c76d3a; padding:16px 20px; background:#fff6ef; }
+.cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px; }
+.card { padding:16px; background:var(--panel); border-radius:10px; } .card strong { display:block; font-size:1.35rem; }
+.table-wrap { overflow-x:auto; margin:14px 0 22px; } table { width:100%; border-collapse:collapse; min-width:760px; font-variant-numeric:tabular-nums; }
+caption { text-align:left; font-weight:700; padding:8px 0; } th,td { text-align:left; padding:9px 11px; border-bottom:1px solid var(--line); }
+thead { background:var(--panel); } svg { display:block; width:100%; height:auto; margin:12px 0 26px; }
+li { margin:.4em 0; } footer { margin-top:3em; color:var(--muted); border-top:1px solid var(--line); padding-top:16px; }
+</style></head><body><main>
+<header><div class="eyebrow">재현 가능한 교육용 연구</div><h1>자동차보험 청구 빈도 모델 비교</h1>
+<p class="lede">노출 기간을 반영해 단순 평균, 포아송 회귀, 부스팅 모델의 오류와 보정 상태를 살펴봅니다.</p>
+<p class="notice"><strong>해석 범위:</strong> 과거 프랑스 자료에 대한 공개 데이터 실험입니다. 현재 한국 시장의 타당성, 보험사 업무 효과 또는 보험 의사결정을 검증하지 않았습니다.</p></header>
+<section aria-labelledby="overview"><h2 id="overview">실험 개요</h2><div class="cards">
+<div class="card">선택 모델<strong>poisson_hgb</strong><span class="muted">선택 기준: validation</span></div>
+<div class="card">관측 행<strong>678,013</strong><span class="muted">표본 실행: False</span></div>
+<div class="card">자료 상태<strong>openml_pinned</strong><span class="muted">seed: 20261101</span></div>
+<div class="card">감사 행<strong>678,013</strong><span class="muted">청구 36,102건 · 노출 358,499.45년</span></div>
+</div><div class='table-wrap'><table><caption>Data split summary</caption><thead><tr><th scope='col'>Split</th><th scope='col'>Rows</th><th scope='col'>Exposure (years)</th></tr></thead><tbody><tr><th scope='row'>Train</th><td>406,061</td><td>214,840.52</td></tr><tr><th scope='row'>Validation</th><td>136,283</td><td>71,924.09</td></tr><tr><th scope='row'>Test</th><td>135,669</td><td>71,734.83</td></tr></tbody></table></div></section>
+<section aria-labelledby="selection"><h2 id="selection">모델 선택과 평가</h2>
+<p>모델 선택은 검증 분할의 노출 가중 포아송 편차로 수행했습니다. 아래 테스트 분할 결과는 선택 이후의 평가이며, 이 점수로 선택이나 설정을 바꾸지 않았습니다.</p>
+<div class='table-wrap'><table><caption>Validation results — used for model selection</caption><thead><tr><th scope='col'>Model / group</th><th scope='col'>Rows</th><th scope='col'>Exposure (years)</th><th scope='col'>Poisson deviance</th><th scope='col'>Weighted MAE</th><th scope='col'>Observed claims</th><th scope='col'>Predicted claims</th><th scope='col'>Observed / predicted</th></tr></thead><tbody><tr><th scope='row'>Training mean</th><td>136,283</td><td>71,924.09</td><td>0.6279</td><td>0.1895</td><td>7,305.00</td><td>7,223.53</td><td>1.0113</td></tr><tr><th scope='row'>Poisson GLM</th><td>136,283</td><td>71,924.09</td><td>0.6068</td><td>0.1873</td><td>7,305.00</td><td>7,230.34</td><td>1.0103</td></tr><tr><th scope='row'>Poisson HGB</th><td>136,283</td><td>71,924.09</td><td>0.5759</td><td>0.1831</td><td>7,305.00</td><td>7,199.66</td><td>1.0146</td></tr></tbody></table></div>
+<div class='table-wrap'><table><caption>Test results — held out for final evaluation</caption><thead><tr><th scope='col'>Model / group</th><th scope='col'>Rows</th><th scope='col'>Exposure (years)</th><th scope='col'>Poisson deviance</th><th scope='col'>Weighted MAE</th><th scope='col'>Observed claims</th><th scope='col'>Predicted claims</th><th scope='col'>Observed / predicted</th></tr></thead><tbody><tr><th scope='row'>Training mean</th><td>135,669</td><td>71,734.83</td><td>0.6263</td><td>0.1888</td><td>7,220.00</td><td>7,204.52</td><td>1.0021</td></tr><tr><th scope='row'>Poisson GLM</th><td>135,669</td><td>71,734.83</td><td>0.6058</td><td>0.1868</td><td>7,220.00</td><td>7,203.08</td><td>1.0023</td></tr><tr><th scope='row'>Poisson HGB</th><td>135,669</td><td>71,734.83</td><td>0.5749</td><td>0.1829</td><td>7,220.00</td><td>7,176.99</td><td>1.0060</td></tr></tbody></table></div>
+<figure><figcaption>테스트 세트 포아송 편차. 낮을수록 관측 빈도와 예측 빈도의 차이가 작습니다.</figcaption><svg xmlns:xlink="http://www.w3.org/1999/xlink" width="590.4pt" height="302.4pt" viewBox="0 0 590.4 302.4" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-11-01T01:13:19.310438</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.11.2, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 302.4 
+L 590.4 302.4 
+L 590.4 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 39.904146 282.398979 
+L 587.39976 282.398979 
+L 587.39976 18.118365 
+L 39.904146 18.118365 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="matplotlib.axis_1">
+    <g id="xtick_1">
+     <g id="line2d_1">
+      <defs>
+       <path id="mef73fd1f82" d="M 0 0 
+L 0 3.5 
+" style="stroke: #000000; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#mef73fd1f82" x="135.893637" y="282.398979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_1">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="135.893637" y="296.997416" transform="rotate(-0 135.893637 296.997416)">Training mean</text>
+     </g>
+    </g>
+    <g id="xtick_2">
+     <g id="line2d_2">
+      <g>
+       <use xlink:href="#mef73fd1f82" x="313.651953" y="282.398979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_2">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="313.651953" y="296.997416" transform="rotate(-0 313.651953 296.997416)">Poisson GLM</text>
+     </g>
+    </g>
+    <g id="xtick_3">
+     <g id="line2d_3">
+      <g>
+       <use xlink:href="#mef73fd1f82" x="491.410269" y="282.398979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_3">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="491.410269" y="296.997416" transform="rotate(-0 491.410269 296.997416)">Poisson HGB</text>
+     </g>
+    </g>
+   </g>
+   <g id="matplotlib.axis_2">
+    <g id="ytick_1">
+     <g id="line2d_4">
+      <path d="M 39.904146 282.398979 
+L 587.39976 282.398979 
+" clip-path="url(#p3ac5016e08)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_5">
+      <defs>
+       <path id="m3f0b81e84b" d="M 0 0 
+L -3.5 0 
+" style="stroke: #000000; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#m3f0b81e84b" x="39.904146" y="282.398979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_4">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="32.904146" y="286.197807" transform="rotate(-0 32.904146 286.197807)">0.0</text>
+     </g>
+    </g>
+    <g id="ytick_2">
+     <g id="line2d_6">
+      <path d="M 39.904146 242.210847 
+L 587.39976 242.210847 
+" clip-path="url(#p3ac5016e08)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_7">
+      <g>
+       <use xlink:href="#m3f0b81e84b" x="39.904146" y="242.210847" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_5">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="32.904146" y="246.009675" transform="rotate(-0 32.904146 246.009675)">0.1</text>
+     </g>
+    </g>
+    <g id="ytick_3">
+     <g id="line2d_8">
+      <path d="M 39.904146 202.022716 
+L 587.39976 202.022716 
+" clip-path="url(#p3ac5016e08)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_9">
+      <g>
+       <use xlink:href="#m3f0b81e84b" x="39.904146" y="202.022716" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_6">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="32.904146" y="205.821544" transform="rotate(-0 32.904146 205.821544)">0.2</text>
+     </g>
+    </g>
+    <g id="ytick_4">
+     <g id="line2d_10">
+      <path d="M 39.904146 161.834584 
+L 587.39976 161.834584 
+" clip-path="url(#p3ac5016e08)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_11">
+      <g>
+       <use xlink:href="#m3f0b81e84b" x="39.904146" y="161.834584" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_7">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="32.904146" y="165.633412" transform="rotate(-0 32.904146 165.633412)">0.3</text>
+     </g>
+    </g>
+    <g id="ytick_5">
+     <g id="line2d_12">
+      <path d="M 39.904146 121.646452 
+L 587.39976 121.646452 
+" clip-path="url(#p3ac5016e08)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_13">
+      <g>
+       <use xlink:href="#m3f0b81e84b" x="39.904146" y="121.646452" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_8">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="32.904146" y="125.445281" transform="rotate(-0 32.904146 125.445281)">0.4</text>
+     </g>
+    </g>
+    <g id="ytick_6">
+     <g id="line2d_14">
+      <path d="M 39.904146 81.458321 
+L 587.39976 81.458321 
+" clip-path="url(#p3ac5016e08)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_15">
+      <g>
+       <use xlink:href="#m3f0b81e84b" x="39.904146" y="81.458321" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_9">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="32.904146" y="85.257149" transform="rotate(-0 32.904146 85.257149)">0.5</text>
+     </g>
+    </g>
+    <g id="ytick_7">
+     <g id="line2d_16">
+      <path d="M 39.904146 41.270189 
+L 587.39976 41.270189 
+" clip-path="url(#p3ac5016e08)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_17">
+      <g>
+       <use xlink:href="#m3f0b81e84b" x="39.904146" y="41.270189" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_10">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="32.904146" y="45.069017" transform="rotate(-0 32.904146 45.069017)">0.6</text>
+     </g>
+    </g>
+    <g id="text_11">
+     <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="10.598678" y="150.258672" transform="rotate(-90 10.598678 150.258672)">Exposure-weighted deviance</text>
+    </g>
+   </g>
+   <g id="patch_3">
+    <path d="M 64.790311 282.398979 
+L 206.996963 282.398979 
+L 206.996963 30.703156 
+L 64.790311 30.703156 
+z
+" clip-path="url(#p3ac5016e08)" style="fill: #53657d"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 242.548627 282.398979 
+L 384.75528 282.398979 
+L 384.75528 38.937924 
+L 242.548627 38.937924 
+z
+" clip-path="url(#p3ac5016e08)" style="fill: #087e8b"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 420.306943 282.398979 
+L 562.513596 282.398979 
+L 562.513596 51.364263 
+L 420.306943 51.364263 
+z
+" clip-path="url(#p3ac5016e08)" style="fill: #c76d3a"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 39.904146 282.398979 
+L 39.904146 18.118365 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 587.39976 282.398979 
+L 587.39976 18.118365 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 39.904146 282.398979 
+L 587.39976 282.398979 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 39.904146 18.118365 
+L 587.39976 18.118365 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="text_12">
+    <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: middle" x="135.893637" y="26.703156" transform="rotate(-0 135.893637 26.703156)">0.6263</text>
+   </g>
+   <g id="text_13">
+    <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: middle" x="313.651953" y="34.937924" transform="rotate(-0 313.651953 34.937924)">0.6058</text>
+   </g>
+   <g id="text_14">
+    <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: middle" x="491.410269" y="47.364263" transform="rotate(-0 491.410269 47.364263)">0.5749</text>
+   </g>
+   <g id="text_15">
+    <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: middle" x="313.651953" y="12.118365" transform="rotate(-0 313.651953 12.118365)">Test-set Poisson deviance</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p3ac5016e08">
+   <rect x="39.904146" y="18.118365" width="547.495614" height="264.280614"/>
+  </clipPath>
+ </defs>
+</svg>
+</figure></section>
+<section aria-labelledby="calibration"><h2 id="calibration">보정과 집단별 오차</h2>
+<p>보정 빈도는 각 bin의 청구 건수 합계를 노출 합계로 나누어 계산합니다. 빈도 평균들의 단순 평균은 사용하지 않습니다.</p>
+<figure><figcaption>선택 모델의 예측 순위별 관측 및 예측 청구 빈도</figcaption><svg xmlns:xlink="http://www.w3.org/1999/xlink" width="590.4pt" height="302.4pt" viewBox="0 0 590.4 302.4" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-11-01T01:13:19.435646</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.11.2, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 302.4 
+L 590.4 302.4 
+L 590.4 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 46.266646 268.398979 
+L 587.39976 268.398979 
+L 587.39976 18.118365 
+L 46.266646 18.118365 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="matplotlib.axis_1">
+    <g id="xtick_1">
+     <g id="line2d_1">
+      <path d="M 70.863606 268.398979 
+L 70.863606 18.118365 
+" clip-path="url(#p85022ff17f)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_2">
+      <defs>
+       <path id="m5b555ce42d" d="M 0 0 
+L 0 3.5 
+" style="stroke: #000000; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#m5b555ce42d" x="70.863606" y="268.398979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_1">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="70.863606" y="282.996635" transform="rotate(-0 70.863606 282.996635)">1</text>
+     </g>
+    </g>
+    <g id="xtick_2">
+     <g id="line2d_3">
+      <path d="M 125.523516 268.398979 
+L 125.523516 18.118365 
+" clip-path="url(#p85022ff17f)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_4">
+      <g>
+       <use xlink:href="#m5b555ce42d" x="125.523516" y="268.398979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_2">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="125.523516" y="282.996635" transform="rotate(-0 125.523516 282.996635)">2</text>
+     </g>
+    </g>
+    <g id="xtick_3">
+     <g id="line2d_5">
+      <path d="M 180.183427 268.398979 
+L 180.183427 18.118365 
+" clip-path="url(#p85022ff17f)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_6">
+      <g>
+       <use xlink:href="#m5b555ce42d" x="180.183427" y="268.398979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_3">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="180.183427" y="282.996635" transform="rotate(-0 180.183427 282.996635)">3</text>
+     </g>
+    </g>
+    <g id="xtick_4">
+     <g id="line2d_7">
+      <path d="M 234.843337 268.398979 
+L 234.843337 18.118365 
+" clip-path="url(#p85022ff17f)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_8">
+      <g>
+       <use xlink:href="#m5b555ce42d" x="234.843337" y="268.398979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_4">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="234.843337" y="282.996635" transform="rotate(-0 234.843337 282.996635)">4</text>
+     </g>
+    </g>
+    <g id="xtick_5">
+     <g id="line2d_9">
+      <path d="M 289.503248 268.398979 
+L 289.503248 18.118365 
+" clip-path="url(#p85022ff17f)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_10">
+      <g>
+       <use xlink:href="#m5b555ce42d" x="289.503248" y="268.398979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_5">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="289.503248" y="282.996635" transform="rotate(-0 289.503248 282.996635)">5</text>
+     </g>
+    </g>
+    <g id="xtick_6">
+     <g id="line2d_11">
+      <path d="M 344.163158 268.398979 
+L 344.163158 18.118365 
+" clip-path="url(#p85022ff17f)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_12">
+      <g>
+       <use xlink:href="#m5b555ce42d" x="344.163158" y="268.398979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_6">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="344.163158" y="282.996635" transform="rotate(-0 344.163158 282.996635)">6</text>
+     </g>
+    </g>
+    <g id="xtick_7">
+     <g id="line2d_13">
+      <path d="M 398.823069 268.398979 
+L 398.823069 18.118365 
+" clip-path="url(#p85022ff17f)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_14">
+      <g>
+       <use xlink:href="#m5b555ce42d" x="398.823069" y="268.398979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_7">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="398.823069" y="282.996635" transform="rotate(-0 398.823069 282.996635)">7</text>
+     </g>
+    </g>
+    <g id="xtick_8">
+     <g id="line2d_15">
+      <path d="M 453.482979 268.398979 
+L 453.482979 18.118365 
+" clip-path="url(#p85022ff17f)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_16">
+      <g>
+       <use xlink:href="#m5b555ce42d" x="453.482979" y="268.398979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_8">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="453.482979" y="282.996635" transform="rotate(-0 453.482979 282.996635)">8</text>
+     </g>
+    </g>
+    <g id="xtick_9">
+     <g id="line2d_17">
+      <path d="M 508.14289 268.398979 
+L 508.14289 18.118365 
+" clip-path="url(#p85022ff17f)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_18">
+      <g>
+       <use xlink:href="#m5b555ce42d" x="508.14289" y="268.398979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_9">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="508.14289" y="282.996635" transform="rotate(-0 508.14289 282.996635)">9</text>
+     </g>
+    </g>
+    <g id="xtick_10">
+     <g id="line2d_19">
+      <path d="M 562.8028 268.398979 
+L 562.8028 18.118365 
+" clip-path="url(#p85022ff17f)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_20">
+      <g>
+       <use xlink:href="#m5b555ce42d" x="562.8028" y="268.398979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_10">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="562.8028" y="282.996635" transform="rotate(-0 562.8028 282.996635)">10</text>
+     </g>
+    </g>
+    <g id="text_11">
+     <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="316.833203" y="296.997416" transform="rotate(-0 316.833203 296.997416)">Prediction bin</text>
+    </g>
+   </g>
+   <g id="matplotlib.axis_2">
+    <g id="ytick_1">
+     <g id="line2d_21">
+      <path d="M 46.266646 250.901044 
+L 587.39976 250.901044 
+" clip-path="url(#p85022ff17f)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_22">
+      <defs>
+       <path id="m7ac5855a5d" d="M 0 0 
+L -3.5 0 
+" style="stroke: #000000; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#m7ac5855a5d" x="46.266646" y="250.901044" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_12">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="39.266646" y="254.699872" transform="rotate(-0 39.266646 254.699872)">0.05</text>
+     </g>
+    </g>
+    <g id="ytick_2">
+     <g id="line2d_23">
+      <path d="M 46.266646 216.733834 
+L 587.39976 216.733834 
+" clip-path="url(#p85022ff17f)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_24">
+      <g>
+       <use xlink:href="#m7ac5855a5d" x="46.266646" y="216.733834" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_13">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="39.266646" y="220.532663" transform="rotate(-0 39.266646 220.532663)">0.10</text>
+     </g>
+    </g>
+    <g id="ytick_3">
+     <g id="line2d_25">
+      <path d="M 46.266646 182.566625 
+L 587.39976 182.566625 
+" clip-path="url(#p85022ff17f)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_26">
+      <g>
+       <use xlink:href="#m7ac5855a5d" x="46.266646" y="182.566625" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_14">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="39.266646" y="186.365453" transform="rotate(-0 39.266646 186.365453)">0.15</text>
+     </g>
+    </g>
+    <g id="ytick_4">
+     <g id="line2d_27">
+      <path d="M 46.266646 148.399416 
+L 587.39976 148.399416 
+" clip-path="url(#p85022ff17f)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_28">
+      <g>
+       <use xlink:href="#m7ac5855a5d" x="46.266646" y="148.399416" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_15">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="39.266646" y="152.198244" transform="rotate(-0 39.266646 152.198244)">0.20</text>
+     </g>
+    </g>
+    <g id="ytick_5">
+     <g id="line2d_29">
+      <path d="M 46.266646 114.232206 
+L 587.39976 114.232206 
+" clip-path="url(#p85022ff17f)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_30">
+      <g>
+       <use xlink:href="#m7ac5855a5d" x="46.266646" y="114.232206" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_16">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="39.266646" y="118.031034" transform="rotate(-0 39.266646 118.031034)">0.25</text>
+     </g>
+    </g>
+    <g id="ytick_6">
+     <g id="line2d_31">
+      <path d="M 46.266646 80.064997 
+L 587.39976 80.064997 
+" clip-path="url(#p85022ff17f)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_32">
+      <g>
+       <use xlink:href="#m7ac5855a5d" x="46.266646" y="80.064997" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_17">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="39.266646" y="83.863825" transform="rotate(-0 39.266646 83.863825)">0.30</text>
+     </g>
+    </g>
+    <g id="ytick_7">
+     <g id="line2d_33">
+      <path d="M 46.266646 45.897787 
+L 587.39976 45.897787 
+" clip-path="url(#p85022ff17f)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_34">
+      <g>
+       <use xlink:href="#m7ac5855a5d" x="46.266646" y="45.897787" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_18">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="39.266646" y="49.696616" transform="rotate(-0 39.266646 49.696616)">0.35</text>
+     </g>
+    </g>
+    <g id="text_19">
+     <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="10.598678" y="143.258672" transform="rotate(-90 10.598678 143.258672)">Claim frequency (claims / exposure year)</text>
+    </g>
+   </g>
+   <g id="line2d_35">
+    <path d="M 70.863606 257.022587 
+L 125.523516 249.259673 
+L 180.183427 240.692153 
+L 234.843337 239.885732 
+L 289.503248 231.570773 
+L 344.163158 221.555104 
+L 398.823069 218.189419 
+L 453.482979 211.219243 
+L 508.14289 181.08124 
+L 562.8028 29.494757 
+" clip-path="url(#p85022ff17f)" style="fill: none; stroke: #087e8b; stroke-width: 1.5; stroke-linecap: square"/>
+    <defs>
+     <path id="m4e6786c662" d="M 0 3 
+C 0.795609 3 1.55874 2.683901 2.12132 2.12132 
+C 2.683901 1.55874 3 0.795609 3 0 
+C 3 -0.795609 2.683901 -1.55874 2.12132 -2.12132 
+C 1.55874 -2.683901 0.795609 -3 0 -3 
+C -0.795609 -3 -1.55874 -2.683901 -2.12132 -2.12132 
+C -2.683901 -1.55874 -3 -0.795609 -3 0 
+C -3 0.795609 -2.683901 1.55874 -2.12132 2.12132 
+C -1.55874 2.683901 -0.795609 3 0 3 
+z
+" style="stroke: #087e8b"/>
+    </defs>
+    <g clip-path="url(#p85022ff17f)">
+     <use xlink:href="#m4e6786c662" x="70.863606" y="257.022587" style="fill: #087e8b; stroke: #087e8b"/>
+     <use xlink:href="#m4e6786c662" x="125.523516" y="249.259673" style="fill: #087e8b; stroke: #087e8b"/>
+     <use xlink:href="#m4e6786c662" x="180.183427" y="240.692153" style="fill: #087e8b; stroke: #087e8b"/>
+     <use xlink:href="#m4e6786c662" x="234.843337" y="239.885732" style="fill: #087e8b; stroke: #087e8b"/>
+     <use xlink:href="#m4e6786c662" x="289.503248" y="231.570773" style="fill: #087e8b; stroke: #087e8b"/>
+     <use xlink:href="#m4e6786c662" x="344.163158" y="221.555104" style="fill: #087e8b; stroke: #087e8b"/>
+     <use xlink:href="#m4e6786c662" x="398.823069" y="218.189419" style="fill: #087e8b; stroke: #087e8b"/>
+     <use xlink:href="#m4e6786c662" x="453.482979" y="211.219243" style="fill: #087e8b; stroke: #087e8b"/>
+     <use xlink:href="#m4e6786c662" x="508.14289" y="181.08124" style="fill: #087e8b; stroke: #087e8b"/>
+     <use xlink:href="#m4e6786c662" x="562.8028" y="29.494757" style="fill: #087e8b; stroke: #087e8b"/>
+    </g>
+   </g>
+   <g id="line2d_36">
+    <path d="M 70.863606 252.287689 
+L 125.523516 243.552276 
+L 180.183427 238.732797 
+L 234.843337 234.364738 
+L 289.503248 230.43263 
+L 344.163158 226.216797 
+L 398.823069 220.184507 
+L 453.482979 206.058682 
+L 508.14289 183.312579 
+L 562.8028 59.563348 
+" clip-path="url(#p85022ff17f)" style="fill: none; stroke: #c76d3a; stroke-width: 1.5; stroke-linecap: square"/>
+    <defs>
+     <path id="m1ff123ccb3" d="M -3 3 
+L 3 3 
+L 3 -3 
+L -3 -3 
+z
+" style="stroke: #c76d3a; stroke-linejoin: miter"/>
+    </defs>
+    <g clip-path="url(#p85022ff17f)">
+     <use xlink:href="#m1ff123ccb3" x="70.863606" y="252.287689" style="fill: #c76d3a; stroke: #c76d3a; stroke-linejoin: miter"/>
+     <use xlink:href="#m1ff123ccb3" x="125.523516" y="243.552276" style="fill: #c76d3a; stroke: #c76d3a; stroke-linejoin: miter"/>
+     <use xlink:href="#m1ff123ccb3" x="180.183427" y="238.732797" style="fill: #c76d3a; stroke: #c76d3a; stroke-linejoin: miter"/>
+     <use xlink:href="#m1ff123ccb3" x="234.843337" y="234.364738" style="fill: #c76d3a; stroke: #c76d3a; stroke-linejoin: miter"/>
+     <use xlink:href="#m1ff123ccb3" x="289.503248" y="230.43263" style="fill: #c76d3a; stroke: #c76d3a; stroke-linejoin: miter"/>
+     <use xlink:href="#m1ff123ccb3" x="344.163158" y="226.216797" style="fill: #c76d3a; stroke: #c76d3a; stroke-linejoin: miter"/>
+     <use xlink:href="#m1ff123ccb3" x="398.823069" y="220.184507" style="fill: #c76d3a; stroke: #c76d3a; stroke-linejoin: miter"/>
+     <use xlink:href="#m1ff123ccb3" x="453.482979" y="206.058682" style="fill: #c76d3a; stroke: #c76d3a; stroke-linejoin: miter"/>
+     <use xlink:href="#m1ff123ccb3" x="508.14289" y="183.312579" style="fill: #c76d3a; stroke: #c76d3a; stroke-linejoin: miter"/>
+     <use xlink:href="#m1ff123ccb3" x="562.8028" y="59.563348" style="fill: #c76d3a; stroke: #c76d3a; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="patch_3">
+    <path d="M 46.266646 268.398979 
+L 46.266646 18.118365 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 587.39976 268.398979 
+L 587.39976 18.118365 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 46.266646 268.398979 
+L 587.39976 268.398979 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 46.266646 18.118365 
+L 587.39976 18.118365 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="text_20">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="70.863606" y="249.022587" transform="rotate(-0 70.863606 249.022587)">0.041</text>
+   </g>
+   <g id="text_21">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="125.523516" y="241.259673" transform="rotate(-0 125.523516 241.259673)">0.052</text>
+   </g>
+   <g id="text_22">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="180.183427" y="232.692153" transform="rotate(-0 180.183427 232.692153)">0.065</text>
+   </g>
+   <g id="text_23">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="234.843337" y="231.885732" transform="rotate(-0 234.843337 231.885732)">0.066</text>
+   </g>
+   <g id="text_24">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="289.503248" y="223.570773" transform="rotate(-0 289.503248 223.570773)">0.078</text>
+   </g>
+   <g id="text_25">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="344.163158" y="213.555104" transform="rotate(-0 344.163158 213.555104)">0.093</text>
+   </g>
+   <g id="text_26">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="398.823069" y="210.189419" transform="rotate(-0 398.823069 210.189419)">0.098</text>
+   </g>
+   <g id="text_27">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="453.482979" y="203.219243" transform="rotate(-0 453.482979 203.219243)">0.108</text>
+   </g>
+   <g id="text_28">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="508.14289" y="173.08124" transform="rotate(-0 508.14289 173.08124)">0.152</text>
+   </g>
+   <g id="text_29">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="562.8028" y="21.494757" transform="rotate(-0 562.8028 21.494757)">0.374</text>
+   </g>
+   <g id="text_30">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="70.863606" y="266.287689" transform="rotate(-0 70.863606 266.287689)">0.048</text>
+   </g>
+   <g id="text_31">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="125.523516" y="257.552276" transform="rotate(-0 125.523516 257.552276)">0.061</text>
+   </g>
+   <g id="text_32">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="180.183427" y="252.732797" transform="rotate(-0 180.183427 252.732797)">0.068</text>
+   </g>
+   <g id="text_33">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="234.843337" y="248.364738" transform="rotate(-0 234.843337 248.364738)">0.074</text>
+   </g>
+   <g id="text_34">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="289.503248" y="244.43263" transform="rotate(-0 289.503248 244.43263)">0.080</text>
+   </g>
+   <g id="text_35">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="344.163158" y="240.216797" transform="rotate(-0 344.163158 240.216797)">0.086</text>
+   </g>
+   <g id="text_36">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="398.823069" y="234.184507" transform="rotate(-0 398.823069 234.184507)">0.095</text>
+   </g>
+   <g id="text_37">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="453.482979" y="220.058682" transform="rotate(-0 453.482979 220.058682)">0.116</text>
+   </g>
+   <g id="text_38">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="508.14289" y="197.312579" transform="rotate(-0 508.14289 197.312579)">0.149</text>
+   </g>
+   <g id="text_39">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="562.8028" y="73.563348" transform="rotate(-0 562.8028 73.563348)">0.330</text>
+   </g>
+   <g id="text_40">
+    <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: middle" x="316.833203" y="12.118365" transform="rotate(-0 316.833203 12.118365)">Calibration by prediction bin — Poisson HGB</text>
+   </g>
+   <g id="legend_1">
+    <g id="line2d_37">
+     <path d="M 55.266646 31.216803 
+L 65.266646 31.216803 
+L 75.266646 31.216803 
+" style="fill: none; stroke: #087e8b; stroke-width: 1.5; stroke-linecap: square"/>
+     <g>
+      <use xlink:href="#m4e6786c662" x="65.266646" y="31.216803" style="fill: #087e8b; stroke: #087e8b"/>
+     </g>
+    </g>
+    <g id="text_41">
+     <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="83.266646" y="34.716803" transform="rotate(-0 83.266646 34.716803)">Observed rate</text>
+    </g>
+    <g id="line2d_38">
+     <path d="M 55.266646 46.217584 
+L 65.266646 46.217584 
+L 75.266646 46.217584 
+" style="fill: none; stroke: #c76d3a; stroke-width: 1.5; stroke-linecap: square"/>
+     <g>
+      <use xlink:href="#m1ff123ccb3" x="65.266646" y="46.217584" style="fill: #c76d3a; stroke: #c76d3a; stroke-linejoin: miter"/>
+     </g>
+    </g>
+    <g id="text_42">
+     <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="83.266646" y="49.717584" transform="rotate(-0 83.266646 49.717584)">Predicted rate</text>
+    </g>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p85022ff17f">
+   <rect x="46.266646" y="18.118365" width="541.133114" height="250.280614"/>
+  </clipPath>
+ </defs>
+</svg>
+</figure>
+<div class='table-wrap'><table><caption>Selected-model calibration bins (aggregate counts / exposure)</caption><thead><tr><th scope='col'>Model / group</th><th scope='col'>Rows</th><th scope='col'>Exposure (years)</th><th scope='col'>Poisson deviance</th><th scope='col'>Weighted MAE</th><th scope='col'>Observed claims</th><th scope='col'>Predicted claims</th><th scope='col'>Observed / predicted</th></tr></thead><tbody><tr><th scope='row'>Bin 1</th><td>13,567</td><td>8,527.89</td><td>0.3089</td><td>0.0862</td><td>350.00</td><td>409.09</td><td>0.8556</td></tr><tr><th scope='row'>Bin 2</th><td>13,567</td><td>8,091.30</td><td>0.3749</td><td>0.1088</td><td>424.00</td><td>491.58</td><td>0.8625</td></tr><tr><th scope='row'>Bin 3</th><td>13,567</td><td>7,437.68</td><td>0.4406</td><td>0.1270</td><td>483.00</td><td>504.33</td><td>0.9577</td></tr><tr><th scope='row'>Bin 4</th><td>13,567</td><td>7,546.92</td><td>0.4326</td><td>0.1334</td><td>499.00</td><td>559.97</td><td>0.8911</td></tr><tr><th scope='row'>Bin 5</th><td>13,567</td><td>8,098.33</td><td>0.4920</td><td>0.1495</td><td>634.00</td><td>647.49</td><td>0.9792</td></tr><tr><th scope='row'>Bin 6</th><td>13,567</td><td>7,864.90</td><td>0.5529</td><td>0.1680</td><td>731.00</td><td>677.35</td><td>1.0792</td></tr><tr><th scope='row'>Bin 7</th><td>13,567</td><td>7,438.45</td><td>0.5821</td><td>0.1805</td><td>728.00</td><td>706.28</td><td>1.0307</td></tr><tr><th scope='row'>Bin 8</th><td>13,567</td><td>5,912.83</td><td>0.6664</td><td>0.2092</td><td>639.00</td><td>683.65</td><td>0.9347</td></tr><tr><th scope='row'>Bin 9</th><td>13,567</td><td>5,920.87</td><td>0.8035</td><td>0.2730</td><td>901.00</td><td>881.67</td><td>1.0219</td></tr><tr><th scope='row'>Bin 10</th><td>13,566</td><td>4,895.67</td><td>1.5663</td><td>0.5766</td><td>1,831.00</td><td>1,615.58</td><td>1.1333</td></tr></tbody></table></div>
+<p>Sparse 표시는 행 수가 50개 미만이거나 노출 합계가 10년 미만인 구간입니다. 해당 구간은 관측 불확실성에 주의해 해석합니다.</p>
+<div class='table-wrap'><table><caption>Selected-model segment errors; sparse groups need caution</caption><thead><tr><th scope='col'>Model / group</th><th scope='col'>Rows</th><th scope='col'>Exposure (years)</th><th scope='col'>Poisson deviance</th><th scope='col'>Weighted MAE</th><th scope='col'>Observed claims</th><th scope='col'>Predicted claims</th><th scope='col'>Observed / predicted</th></tr></thead><tbody><tr><th scope='row'>DrivAge: &lt;25</th><td>5,991</td><td>2,488.88</td><td>0.9870</td><td>0.3297</td><td>497.00</td><td>446.81</td><td>1.1123</td></tr><tr><th scope='row'>DrivAge: 25-39</th><td>45,697</td><td>21,678.85</td><td>0.5491</td><td>0.1714</td><td>1,952.00</td><td>2,082.88</td><td>0.9372</td></tr><tr><th scope='row'>DrivAge: 40-59</th><td>61,562</td><td>33,504.94</td><td>0.5821</td><td>0.1833</td><td>3,433.00</td><td>3,305.70</td><td>1.0385</td></tr><tr><th scope='row'>DrivAge: 60+</th><td>22,419</td><td>14,062.17</td><td>0.5245</td><td>0.1734</td><td>1,338.00</td><td>1,341.60</td><td>0.9973</td></tr><tr><th scope='row'>VehAge: &lt;5</th><td>56,453</td><td>25,896.70</td><td>0.6795</td><td>0.2145</td><td>3,104.00</td><td>3,068.63</td><td>1.0115</td></tr><tr><th scope='row'>VehAge: 5-9</th><td>34,467</td><td>20,030.69</td><td>0.5563</td><td>0.1799</td><td>1,996.00</td><td>1,933.80</td><td>1.0322</td></tr><tr><th scope='row'>VehAge: 10+</th><td>44,749</td><td>25,807.44</td><td>0.4843</td><td>0.1534</td><td>2,120.00</td><td>2,174.56</td><td>0.9749</td></tr><tr><th scope='row'>Area: A</th><td>20,760</td><td>12,332.80</td><td>0.4965</td><td>0.1531</td><td>1,035.00</td><td>1,011.24</td><td>1.0235</td></tr><tr><th scope='row'>Area: B</th><td>14,917</td><td>8,463.41</td><td>0.5125</td><td>0.1627</td><td>757.00</td><td>751.23</td><td>1.0077</td></tr><tr><th scope='row'>Area: C</th><td>38,656</td><td>21,063.28</td><td>0.5556</td><td>0.1756</td><td>2,061.00</td><td>1,987.36</td><td>1.0371</td></tr><tr><th scope='row'>Area: D</th><td>30,246</td><td>15,432.26</td><td>0.5846</td><td>0.1916</td><td>1,561.00</td><td>1,696.67</td><td>0.9200</td></tr><tr><th scope='row'>Area: E</th><td>27,541</td><td>12,828.36</td><td>0.6897</td><td>0.2181</td><td>1,578.00</td><td>1,508.51</td><td>1.0461</td></tr><tr><th scope='row'>Area: F</th><td>3,549</td><td>1,614.72</td><td>0.7473</td><td>0.2467</td><td>228.00</td><td>221.97</td><td>1.0272</td></tr></tbody></table></div></section>
+<section aria-labelledby="uncertainty"><h2 id="uncertainty">불확실성과 데이터 감사</h2>
+<p>선택 모델 − 기준 모델 테스트 편차 차이: <strong>-0.0514</strong>; 95% 쌍체 부트스트랩 구간 [-0.0551, -0.0478], 반복 200, seed 20261101. 음수는 선택 모델에 유리합니다. 구간은 고정된 적합 모델과 분할을 조건으로 계산합니다.</p>
+<p>노출 1년 초과 행: 1,224; 청구 4건 초과 행: 9. 유효한 관측은 임의로 자르지 않고 감사 수치에 남깁니다.</p>
+<h3>Area 기술 통계</h3><div class='table-wrap'><table><caption>Descriptive Area aggregates</caption><thead><tr><th scope='col'>Area</th><th scope='col'>Rows</th><th scope='col'>Exposure (years)</th><th scope='col'>Observed claims</th></tr></thead><tbody><tr><th scope='row'>A</th><td>103,957</td><td>61,969.38</td><td>5,063.00</td></tr><tr><th scope='row'>B</th><td>75,459</td><td>43,012.32</td><td>3,800.00</td></tr><tr><th scope='row'>C</th><td>191,880</td><td>104,449.00</td><td>9,875.00</td></tr><tr><th scope='row'>D</th><td>151,596</td><td>77,120.19</td><td>8,428.00</td></tr><tr><th scope='row'>E</th><td>137,167</td><td>63,819.31</td><td>7,805.00</td></tr><tr><th scope='row'>F</th><td>17,954</td><td>8,129.23</td><td>1,131.00</td></tr></tbody></table></div></section>
+<section aria-labelledby="limits"><h2 id="limits">한계</h2><ul><li>과거 프랑스 자료에 대한 공개 데이터 실험입니다. 시간 순서 검증이나 현재 한국 적합성을 보여주지 않습니다.</li><li>이 결과는 보험료 산정, 인수, 보험금 지급에 사용할 수 없으며 업무 절감이나 사업 성과를 측정하지 않았습니다.</li><li>부트스트랩 구간은 고정 분할과 이미 적합한 모델을 조건으로 합니다. 재학습 불확실성을 포함하지 않습니다.</li><li>내부 AI 보조 검토는 독립된 외부 전문가 검토가 아닙니다.</li><li>No observation-date field: policy holdout is not a temporal validation.</li><li>OpenML asserts CC0; original-insurer permission/provenance is not independently verified.</li><li>No clipping of unusual valid exposures/counts; source anomalies may affect the comparison.</li><li>Model selected on validation; test segments are exploratory, not threshold optimization.</li><li>Bootstrap interval is conditional on this split and frozen fits; not retraining uncertainty.</li><li>No causal, fairness, pricing, underwriting, claim-decision or measured business-impact claim.</li><li>Internal AI-assisted review is not external human or actuarial review.</li><li>Historical French benchmark; current Korean or KB insurance validity is untested.</li></ul>
+<p>이 보고서는 집계 결과만 표시하며 계약별 자료나 예측값을 포함하지 않습니다. 주 데이터 유형: <strong>openml_pinned</strong>.</p></section>
+<footer>MotorClaimLab · Python 3.12.10 · 실행 133.71초 · 자료 출처 일치: True</footer>
+</main></body></html>

@@ -59,6 +59,8 @@ Paired policy bootstrap (200 draws by default, fixed seed) compares selected mod
 
 TDD tests cover invalid/nonfinite data, duplicate IDs, stable disjoint split, unknown categories and held-out preprocessing, weighted metrics against hand-derived examples, baseline exposure weighting, model fit/predict, bootstrap pairing, output overwrite refusal, HTML escaping and actual CLI execution with a clearly synthetic fixture. Online download/full experiment is a separate check.
 
+Execution ruling: the actual source's STRING attributes require liac-arff rather than SciPy's limited ARFF reader. Gzip transport is decoded with a size bound before checksum verification. Browser use was explicitly denied by the URL policy; actual browser desktop/mobile checks are SKIPPED and no alternate server/surface is used. Offline HTML/SVG checks and genuine Matplotlib PNG inspection provide the allowed visual evidence.
+
 Public milestones: design/contract; tested data validation and evaluation; tested models/CLI/report; curated public-data results and verification. Each push is a normal forward push. User has explicitly authorized public GitHub creation and periodic commits/pushes; no deployment or paid services are in scope. All staged files must pass a secret/PII/raw-data review.
 
 ## Limits

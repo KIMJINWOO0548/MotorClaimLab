@@ -1,0 +1,137 @@
+{
+  "recorded_at": "2026-10-31T16:22:59.844101+00:00",
+  "repository": "https://github.com/KIMJINWOO0548/MotorClaimLab",
+  "branch": "main",
+  "tested_code_commit": "751e6f760489ead0f88f63cd68fb52abe19b4d4d",
+  "package_source_sha256": "d825b99db2e819d31df1e19dc6915d1cb1f95a1c4c8503de8ec36907da7d4e7d",
+  "source_sha256": "a45363e056e2ea56408b38eeb9d4d04d7f6c6982eb7a14ed5e807c7c71807cdd",
+  "runtime_lock_sha256": "cb1430ceebaf15f1ca99c63474fad1214b26a5cfe692df7399cd57560997b1b1",
+  "dev_lock_sha256": "3736d92e0fcc92f485a1786d495422d4345f05c5c44c6d84baac0468555b5589",
+  "arff_parser_version": "2.5.0",
+  "checks": [
+    {
+      "command": "python -m pytest -q",
+      "exit_code": 0,
+      "passed": 88,
+      "seconds": 41.73
+    },
+    {
+      "command": "python -m ruff check src tests scripts",
+      "exit_code": 0
+    },
+    {
+      "command": "python -m ruff format --check src tests scripts",
+      "exit_code": 0
+    },
+    {
+      "command": "uv pip check --python .venv/Scripts/python.exe",
+      "exit_code": 0
+    },
+    {
+      "command": "python -m build --no-isolation",
+      "exit_code": 0
+    },
+    {
+      "command": "python scripts/check_distribution.py",
+      "exit_code": 0
+    },
+    {
+      "command": "python -m motorclaimlab run --input <pinned source> --output <fresh run>",
+      "exit_code": 0,
+      "rows": 678013,
+      "evidence": "docs/evidence/benchmark/results.json"
+    },
+    {
+      "command": "python -m motorclaimlab fetch --output <fresh source directory>",
+      "exit_code": 0,
+      "source_sha256": "a45363e056e2ea56408b38eeb9d4d04d7f6c6982eb7a14ed5e807c7c71807cdd"
+    },
+    {
+      "command": "isolated wheel: python -I -X utf8 -m motorclaimlab run on 300 synthetic rows",
+      "exit_code": 0,
+      "evidence": {
+        "exit_code": 0,
+        "rows": 300,
+        "data_kind": "local_unverified",
+        "wheel_import_from_site_packages": true,
+        "executed_outside_checkout": true,
+        "git_commit_available": null,
+        "explicit_child_utf8": true
+      }
+    },
+    {
+      "command": "offline Matplotlib PNG inspection",
+      "status": "VERIFIED",
+      "charts": [
+        "model-comparison.png",
+        "calibration.png"
+      ]
+    },
+    {
+      "command": "browser layout/accessibility audit",
+      "status": "SKIPPED/DENIED",
+      "reason": "Browser URL policy rejected file protocol; no alternate server/surface/raw CDP workaround"
+    }
+  ],
+  "ci": {
+    "url": "https://github.com/KIMJINWOO0548/MotorClaimLab/actions/runs/41218810116",
+    "head_sha": "751e6f760489ead0f88f63cd68fb52abe19b4d4d",
+    "conclusion": "success",
+    "jobs": [
+      "Windows Python 3.12",
+      "Linux Python 3.12",
+      "Linux Python 3.13"
+    ],
+    "online_benchmark_in_ci": false
+  },
+  "tools_observed": {
+    "skills": [
+      "codex-auto-model-router",
+      "Superpowers design/plan/TDD/verification"
+    ],
+    "mcp": [
+      "Context7 scikit-learn documentation",
+      "GitHub profile and commit status reads"
+    ],
+    "leaf_routes": [
+      {
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "tasks": [
+          "source review",
+          "evaluation",
+          "models"
+        ]
+      },
+      {
+        "model": "gpt-6-luna",
+        "effort": "high",
+        "tasks": [
+          "report"
+        ]
+      },
+      {
+        "model": "gpt-6-astra",
+        "effort": "low",
+        "tasks": [
+          "independent code review"
+        ]
+      }
+    ],
+    "model_switch_in_coordinator": false
+  },
+  "review_boundary": "Internal AI assistance and independent context review, not external human/actuarial validation",
+  "raw_policy_records_or_predictions_published": false,
+  "artifact_sha256": {
+    "docs/evidence/benchmark/execution.json": "168f988541bb9167543eaf00b2c35783e25411ec52aa782be140c7561e9fc8b1",
+    "docs/evidence/benchmark/figures/calibration.png": "ecd7033ec1713eb765f2c432f9225c5e81734a266b2ca4db71f163b735f5144e",
+    "docs/evidence/benchmark/figures/calibration.svg": "afd2835922293bf55a65bd2fdf3dadcdcc10c50461a840514a72f37e3124dddf",
+    "docs/evidence/benchmark/figures/model-comparison.png": "fe256d5a3c4fd21f3fda7135019c4dfe975c92579443ebfa2e9eb8213f7c10cf",
+    "docs/evidence/benchmark/figures/model-comparison.svg": "ce2d913e5bef86e92c58e3d683f81846254c9bab982903ce4fb3ddd694efdaad",
+    "docs/evidence/benchmark/report.html": "b91eeeb6078fe0ebbd966cd210f41b2bd113ab1eb6145d17aa99226d9b3808f2",
+    "docs/evidence/benchmark/report.md": "272190ad0c1ea9dd7165bd76b421f48c5993415731096d7efa7905c7fca29bb5",
+    "docs/evidence/benchmark/results.json": "3585e11b57460165521a43db7b21d26dd11330c47affcec820c450c0781e1a74",
+    "docs/evidence/benchmark/selection.json": "987923727958b7d73fd8a01bb768dce566e58008a01848d2108affdedf6271e2",
+    "docs/evidence/source-audit.json": "a896378a171cb52b59a87b6482ed793e9f6ce6a10aaa62d52007a67e2c2e7fd0"
+  }
+}

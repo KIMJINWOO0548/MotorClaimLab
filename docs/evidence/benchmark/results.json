@@ -1,0 +1,682 @@
+{
+  "study": {
+    "name": "MotorClaimLab",
+    "seed": 20261101,
+    "sampled": false,
+    "rows": 678013,
+    "selection_split": "validation",
+    "data_kind": "openml_pinned",
+    "settings": {
+      "seed": 20261101,
+      "max_rows": null,
+      "max_iter": 100,
+      "bootstrap_draws": 200,
+      "thread_limit": 2,
+      "split_method": "sha256-policy-id-60-20-20",
+      "test_used_for_selection": false,
+      "glm": {
+        "alpha": 0.0001,
+        "max_iter": 300,
+        "tol": 1e-06
+      },
+      "hgb": {
+        "max_iter": 100,
+        "max_leaf_nodes": 15,
+        "min_samples_leaf": 100,
+        "learning_rate": 0.05,
+        "early_stopping": false,
+        "loss": "poisson"
+      }
+    }
+  },
+  "audit": {
+    "rows": 678013,
+    "columns": 12,
+    "claims": 36102,
+    "exposure": 358499.4454629838,
+    "exposure_gt_one": 1224,
+    "claims_gt_four": 9,
+    "zero_claim_rows": 643953,
+    "source_values_clipped": false
+  },
+  "selected_model": "poisson_hgb",
+  "splits": {
+    "train": {
+      "rows": 406061,
+      "claims": 21577,
+      "exposure": 214840.51823115503,
+      "membership_sha256": "2295601535e14bfdf16d124977749d35ccab93f8052860b012e594dd555bc025"
+    },
+    "validation": {
+      "rows": 136283,
+      "claims": 7305,
+      "exposure": 71924.09293884273,
+      "membership_sha256": "f2dcbad889e638c0c614deec5443961be39ba9ecbe1f38306018fc6c380e6b46"
+    },
+    "test": {
+      "rows": 135669,
+      "claims": 7220,
+      "exposure": 71734.83429298601,
+      "membership_sha256": "d34de04bdf559c4fbab13745a7bc59c6f693c9dadb27c94f0f3891e3a3c4be0d"
+    }
+  },
+  "metrics": {
+    "validation": {
+      "mean": {
+        "rows": 136283,
+        "exposure": 71924.09293884273,
+        "mean_poisson_deviance": 0.6278509224450309,
+        "weighted_mae": 0.1895461364435837,
+        "observed_claims": 7305.0,
+        "predicted_claims": 7223.5263911979655,
+        "observed_predicted_ratio": 1.0112789245016551
+      },
+      "poisson_glm": {
+        "rows": 136283,
+        "exposure": 71924.09293884273,
+        "mean_poisson_deviance": 0.6067503558311012,
+        "weighted_mae": 0.18726394509670066,
+        "observed_claims": 7305.0,
+        "predicted_claims": 7230.335881251827,
+        "observed_predicted_ratio": 1.0103265076442405
+      },
+      "poisson_hgb": {
+        "rows": 136283,
+        "exposure": 71924.09293884273,
+        "mean_poisson_deviance": 0.5758989553336225,
+        "weighted_mae": 0.18310165489482494,
+        "observed_claims": 7305.0,
+        "predicted_claims": 7199.658759160706,
+        "observed_predicted_ratio": 1.014631421344138
+      }
+    },
+    "test": {
+      "mean": {
+        "rows": 135669,
+        "exposure": 71734.83429298601,
+        "mean_poisson_deviance": 0.6262939151529632,
+        "weighted_mae": 0.18881971920449347,
+        "observed_claims": 7220.0,
+        "predicted_claims": 7204.518646126071,
+        "observed_predicted_ratio": 1.0021488394484555
+      },
+      "poisson_glm": {
+        "rows": 135669,
+        "exposure": 71734.83429298601,
+        "mean_poisson_deviance": 0.6058033678711222,
+        "weighted_mae": 0.18677228075853666,
+        "observed_claims": 7220.0,
+        "predicted_claims": 7203.080012431139,
+        "observed_predicted_ratio": 1.0023489934222112
+      },
+      "poisson_hgb": {
+        "rows": 135669,
+        "exposure": 71734.83429298601,
+        "mean_poisson_deviance": 0.5748829477097793,
+        "weighted_mae": 0.18286066689770822,
+        "observed_claims": 7220.0,
+        "predicted_claims": 7176.987540040667,
+        "observed_predicted_ratio": 1.0059931077933972
+      }
+    }
+  },
+  "calibration": {
+    "mean": [
+      {
+        "bin": 1,
+        "rows": 13567,
+        "exposure": 7985.043333333333,
+        "mean_poisson_deviance": 1.8104903594477795,
+        "weighted_mae": 0.39897817447319106,
+        "observed_claims": 2665.0,
+        "predicted_claims": 801.9589666878223,
+        "observed_predicted_ratio": 3.3231126662337096
+      },
+      {
+        "bin": 2,
+        "rows": 13567,
+        "exposure": 8439.603543678419,
+        "mean_poisson_deviance": 0.47137677009607,
+        "weighted_mae": 0.1661193422357132,
+        "observed_claims": 651.0,
+        "predicted_claims": 847.6116477526814,
+        "observed_predicted_ratio": 0.7680404129957764
+      },
+      {
+        "bin": 3,
+        "rows": 13567,
+        "exposure": 8502.591095890411,
+        "mean_poisson_deviance": 0.4949106344121545,
+        "weighted_mae": 0.16824432997314026,
+        "observed_claims": 665.0,
+        "predicted_claims": 853.9376537838896,
+        "observed_predicted_ratio": 0.7787453768472599
+      },
+      {
+        "bin": 4,
+        "rows": 13567,
+        "exposure": 7973.637260273973,
+        "mean_poisson_deviance": 0.49343450013616436,
+        "weighted_mae": 0.16820055190386338,
+        "observed_claims": 627.0,
+        "predicted_claims": 800.8134246809975,
+        "observed_predicted_ratio": 0.7829539074594862
+      },
+      {
+        "bin": 5,
+        "rows": 13567,
+        "exposure": 6314.52808219178,
+        "mean_poisson_deviance": 0.45884133206091116,
+        "weighted_mae": 0.15622682576378946,
+        "observed_claims": 402.0,
+        "predicted_claims": 634.1847131594477,
+        "observed_predicted_ratio": 0.6338847210574887
+      },
+      {
+        "bin": 6,
+        "rows": 13567,
+        "exposure": 6419.73808219178,
+        "mean_poisson_deviance": 0.4308268064466038,
+        "weighted_mae": 0.15209134208661684,
+        "observed_claims": 381.0,
+        "predicted_claims": 644.7512310057575,
+        "observed_predicted_ratio": 0.5909255875412167
+      },
+      {
+        "bin": 7,
+        "rows": 13567,
+        "exposure": 7348.477123287671,
+        "mean_poisson_deviance": 0.5082165114069213,
+        "weighted_mae": 0.16942885059890975,
+        "observed_claims": 584.0,
+        "predicted_claims": 738.026942937177,
+        "observed_predicted_ratio": 0.7912990244987733
+      },
+      {
+        "bin": 8,
+        "rows": 13567,
+        "exposure": 5861.333999550865,
+        "mean_poisson_deviance": 0.4755486678175289,
+        "weighted_mae": 0.1545335510134521,
+        "observed_claims": 359.0,
+        "predicted_claims": 588.6692359037935,
+        "observed_predicted_ratio": 0.609850112939606
+      },
+      {
+        "bin": 9,
+        "rows": 13567,
+        "exposure": 8039.499032861741,
+        "mean_poisson_deviance": 0.47250943428841397,
+        "weighted_mae": 0.16284139529208985,
+        "observed_claims": 582.0,
+        "predicted_claims": 807.4280962468018,
+        "observed_predicted_ratio": 0.7208072182592262
+      },
+      {
+        "bin": 10,
+        "rows": 13566,
+        "exposure": 4850.3827397260275,
+        "mean_poisson_deviance": 0.48772540029597267,
+        "weighted_mae": 0.15721721137692005,
+        "observed_claims": 304.0,
+        "predicted_claims": 487.1367339677726,
+        "observed_predicted_ratio": 0.624054764919682
+      }
+    ],
+    "poisson_glm": [
+      {
+        "bin": 1,
+        "rows": 13567,
+        "exposure": 8664.385326746014,
+        "mean_poisson_deviance": 0.32904334832589577,
+        "weighted_mae": 0.09376225390888518,
+        "observed_claims": 400.0,
+        "predicted_claims": 442.589905629765,
+        "observed_predicted_ratio": 0.9037711771370758
+      },
+      {
+        "bin": 2,
+        "rows": 13567,
+        "exposure": 8547.765274346883,
+        "mean_poisson_deviance": 0.4425984951395169,
+        "weighted_mae": 0.12529770289745948,
+        "observed_claims": 571.0,
+        "predicted_claims": 552.8883149479602,
+        "observed_predicted_ratio": 1.0327583068087531
+      },
+      {
+        "bin": 3,
+        "rows": 13567,
+        "exposure": 8361.170898270828,
+        "mean_poisson_deviance": 0.4617994856223889,
+        "weighted_mae": 0.13982910089323622,
+        "observed_claims": 617.0,
+        "predicted_claims": 618.1476665090695,
+        "observed_predicted_ratio": 0.99814337807736
+      },
+      {
+        "bin": 4,
+        "rows": 13567,
+        "exposure": 7967.960198368141,
+        "mean_poisson_deviance": 0.5000314558127722,
+        "weighted_mae": 0.1533656145074629,
+        "observed_claims": 638.0,
+        "predicted_claims": 656.8644885554494,
+        "observed_predicted_ratio": 0.9712810040973057
+      },
+      {
+        "bin": 5,
+        "rows": 13567,
+        "exposure": 7661.096875514634,
+        "mean_poisson_deviance": 0.5339191261987661,
+        "weighted_mae": 0.16713000374785938,
+        "observed_claims": 668.0,
+        "predicted_claims": 695.882918320367,
+        "observed_predicted_ratio": 0.9599315954073607
+      },
+      {
+        "bin": 6,
+        "rows": 13567,
+        "exposure": 7124.474925518377,
+        "mean_poisson_deviance": 0.6026195840987992,
+        "weighted_mae": 0.18736892876646394,
+        "observed_claims": 714.0,
+        "predicted_claims": 712.5099305845329,
+        "observed_predicted_ratio": 1.0020912963476099
+      },
+      {
+        "bin": 7,
+        "rows": 13567,
+        "exposure": 6495.4412890186395,
+        "mean_poisson_deviance": 0.6832251674962311,
+        "weighted_mae": 0.2079770215744225,
+        "observed_claims": 729.0,
+        "predicted_claims": 718.5030909859079,
+        "observed_predicted_ratio": 1.0146094138574806
+      },
+      {
+        "bin": 8,
+        "rows": 13567,
+        "exposure": 6058.959973800434,
+        "mean_poisson_deviance": 0.7633950999983916,
+        "weighted_mae": 0.2310216820896745,
+        "observed_claims": 746.0,
+        "predicted_claims": 753.895872010262,
+        "observed_predicted_ratio": 0.9895265748183397
+      },
+      {
+        "bin": 9,
+        "rows": 13567,
+        "exposure": 5596.486588816529,
+        "mean_poisson_deviance": 0.9712030869960436,
+        "weighted_mae": 0.2903698759302848,
+        "observed_claims": 932.0,
+        "predicted_claims": 826.6293508205754,
+        "observed_predicted_ratio": 1.1274702489995374
+      },
+      {
+        "bin": 10,
+        "rows": 13566,
+        "exposure": 5257.092942585523,
+        "mean_poisson_deviance": 1.1594419340823812,
+        "weighted_mae": 0.4056454210000274,
+        "observed_claims": 1205.0,
+        "predicted_claims": 1225.1684740672488,
+        "observed_predicted_ratio": 0.983538203525353
+      }
+    ],
+    "poisson_hgb": [
+      {
+        "bin": 1,
+        "rows": 13567,
+        "exposure": 8527.893959128678,
+        "mean_poisson_deviance": 0.3089241308736267,
+        "weighted_mae": 0.08619528021836811,
+        "observed_claims": 350.0,
+        "predicted_claims": 409.089851310466,
+        "observed_predicted_ratio": 0.8555577677588937
+      },
+      {
+        "bin": 2,
+        "rows": 13567,
+        "exposure": 8091.299070289692,
+        "mean_poisson_deviance": 0.37494769634429276,
+        "weighted_mae": 0.1088360644215273,
+        "observed_claims": 424.0,
+        "predicted_claims": 491.5797830568393,
+        "observed_predicted_ratio": 0.8625253002948957
+      },
+      {
+        "bin": 3,
+        "rows": 13567,
+        "exposure": 7437.680235796092,
+        "mean_poisson_deviance": 0.4406357370451277,
+        "weighted_mae": 0.12696825828475083,
+        "observed_claims": 483.0,
+        "predicted_claims": 504.3260996517713,
+        "observed_predicted_ratio": 0.9577136704475604
+      },
+      {
+        "bin": 4,
+        "rows": 13567,
+        "exposure": 7546.917259525414,
+        "mean_poisson_deviance": 0.4326364312737537,
+        "weighted_mae": 0.1333640674829542,
+        "observed_claims": 499.0,
+        "predicted_claims": 559.9743789284673,
+        "observed_predicted_ratio": 0.891112198659617
+      },
+      {
+        "bin": 5,
+        "rows": 13567,
+        "exposure": 8098.329431095141,
+        "mean_poisson_deviance": 0.4919984187778938,
+        "weighted_mae": 0.1495101232423309,
+        "observed_claims": 634.0,
+        "predicted_claims": 647.4881705885714,
+        "observed_predicted_ratio": 0.9791684679330735
+      },
+      {
+        "bin": 6,
+        "rows": 13567,
+        "exposure": 7864.9004947975145,
+        "mean_poisson_deviance": 0.5529480032472599,
+        "weighted_mae": 0.16797772015280601,
+        "observed_claims": 731.0,
+        "predicted_claims": 677.3465833349627,
+        "observed_predicted_ratio": 1.0792111719245279
+      },
+      {
+        "bin": 7,
+        "rows": 13567,
+        "exposure": 7438.445595478704,
+        "mean_poisson_deviance": 0.582054595018631,
+        "weighted_mae": 0.18050624465857218,
+        "observed_claims": 728.0,
+        "predicted_claims": 706.282759308606,
+        "observed_predicted_ratio": 1.0307486490434135
+      },
+      {
+        "bin": 8,
+        "rows": 13567,
+        "exposure": 5912.8339389175835,
+        "mean_poisson_deviance": 0.6664452982232767,
+        "weighted_mae": 0.20924790410812524,
+        "observed_claims": 639.0,
+        "predicted_claims": 683.6532470610168,
+        "observed_predicted_ratio": 0.9346843633772262
+      },
+      {
+        "bin": 9,
+        "rows": 13567,
+        "exposure": 5920.865453252489,
+        "mean_poisson_deviance": 0.8034587303435132,
+        "weighted_mae": 0.27300501598325494,
+        "observed_claims": 901.0,
+        "predicted_claims": 881.6664654954794,
+        "observed_predicted_ratio": 1.0219283995265211
+      },
+      {
+        "bin": 10,
+        "rows": 13566,
+        "exposure": 4895.668854704693,
+        "mean_poisson_deviance": 1.5662596521478382,
+        "weighted_mae": 0.5765674180978998,
+        "observed_claims": 1831.0,
+        "predicted_claims": 1615.580201304485,
+        "observed_predicted_ratio": 1.1333389691960674
+      }
+    ]
+  },
+  "segments": [
+    {
+      "segment": "DrivAge",
+      "group": "<25",
+      "rows": 5991,
+      "exposure": 2488.881688000599,
+      "mean_poisson_deviance": 0.9870446564569446,
+      "weighted_mae": 0.3296832558876025,
+      "observed_claims": 497.0,
+      "predicted_claims": 446.8103181562122,
+      "observed_predicted_ratio": 1.1123288335213437,
+      "sparse": false
+    },
+    {
+      "segment": "DrivAge",
+      "group": "25-39",
+      "rows": 45697,
+      "exposure": 21678.849557601618,
+      "mean_poisson_deviance": 0.5491407240456592,
+      "weighted_mae": 0.17136397443695608,
+      "observed_claims": 1952.0,
+      "predicted_claims": 2082.8758940880766,
+      "observed_predicted_ratio": 0.9371657742741429,
+      "sparse": false
+    },
+    {
+      "segment": "DrivAge",
+      "group": "40-59",
+      "rows": 61562,
+      "exposure": 33504.93536267685,
+      "mean_poisson_deviance": 0.5820632699741294,
+      "weighted_mae": 0.18334960646170706,
+      "observed_claims": 3433.0,
+      "predicted_claims": 3305.7031158466048,
+      "observed_predicted_ratio": 1.0385082627484512,
+      "sparse": false
+    },
+    {
+      "segment": "DrivAge",
+      "group": "60+",
+      "rows": 22419,
+      "exposure": 14062.16768470694,
+      "mean_poisson_deviance": 0.5245111853659239,
+      "weighted_mae": 0.17343318186726456,
+      "observed_claims": 1338.0,
+      "predicted_claims": 1341.5982119497721,
+      "observed_predicted_ratio": 0.9973179660514434,
+      "sparse": false
+    },
+    {
+      "segment": "VehAge",
+      "group": "<5",
+      "rows": 56453,
+      "exposure": 25896.698806796918,
+      "mean_poisson_deviance": 0.6795405376419337,
+      "weighted_mae": 0.21453470305971029,
+      "observed_claims": 3104.0,
+      "predicted_claims": 3068.629295359672,
+      "observed_predicted_ratio": 1.011526548577834,
+      "sparse": false
+    },
+    {
+      "segment": "VehAge",
+      "group": "5-9",
+      "rows": 34467,
+      "exposure": 20030.691878134592,
+      "mean_poisson_deviance": 0.5562698767676482,
+      "weighted_mae": 0.17986407953075628,
+      "observed_claims": 1996.0,
+      "predicted_claims": 1933.8018067351163,
+      "observed_predicted_ratio": 1.0321636855691507,
+      "sparse": false
+    },
+    {
+      "segment": "VehAge",
+      "group": "10+",
+      "rows": 44749,
+      "exposure": 25807.443608054495,
+      "mean_poisson_deviance": 0.484310110242024,
+      "weighted_mae": 0.1534029155684612,
+      "observed_claims": 2120.0,
+      "predicted_claims": 2174.556437945877,
+      "observed_predicted_ratio": 0.9749114637845814,
+      "sparse": false
+    },
+    {
+      "segment": "Area",
+      "group": "A",
+      "rows": 20760,
+      "exposure": 12332.79577438431,
+      "mean_poisson_deviance": 0.49646215645224784,
+      "weighted_mae": 0.15313178303433525,
+      "observed_claims": 1035.0,
+      "predicted_claims": 1011.2430478955838,
+      "observed_predicted_ratio": 1.0234928211905683,
+      "sparse": false
+    },
+    {
+      "segment": "Area",
+      "group": "B",
+      "rows": 14917,
+      "exposure": 8463.41464630586,
+      "mean_poisson_deviance": 0.5124976513259456,
+      "weighted_mae": 0.16271541806723006,
+      "observed_claims": 757.0,
+      "predicted_claims": 751.2338880888994,
+      "observed_predicted_ratio": 1.0076755215686146,
+      "sparse": false
+    },
+    {
+      "segment": "Area",
+      "group": "C",
+      "rows": 38656,
+      "exposure": 21063.28406617262,
+      "mean_poisson_deviance": 0.5556092774028714,
+      "weighted_mae": 0.17556740316283123,
+      "observed_claims": 2061.0,
+      "predicted_claims": 1987.3627858987984,
+      "observed_predicted_ratio": 1.0370527286833031,
+      "sparse": false
+    },
+    {
+      "segment": "Area",
+      "group": "D",
+      "rows": 30246,
+      "exposure": 15432.261952990493,
+      "mean_poisson_deviance": 0.5845614196952978,
+      "weighted_mae": 0.1916261539894095,
+      "observed_claims": 1561.0,
+      "predicted_claims": 1696.6667488574672,
+      "observed_predicted_ratio": 0.9200392481618297,
+      "sparse": false
+    },
+    {
+      "segment": "Area",
+      "group": "E",
+      "rows": 27541,
+      "exposure": 12828.3597387529,
+      "mean_poisson_deviance": 0.6897340057629161,
+      "weighted_mae": 0.21812103867509158,
+      "observed_claims": 1578.0,
+      "predicted_claims": 1508.5089322680753,
+      "observed_predicted_ratio": 1.0460660631471657,
+      "sparse": false
+    },
+    {
+      "segment": "Area",
+      "group": "F",
+      "rows": 3549,
+      "exposure": 1614.7181143798189,
+      "mean_poisson_deviance": 0.7472942313261018,
+      "weighted_mae": 0.24674420518477877,
+      "observed_claims": 228.0,
+      "predicted_claims": 221.97213703184184,
+      "observed_predicted_ratio": 1.0271559442043552,
+      "sparse": false
+    }
+  ],
+  "bootstrap": {
+    "selected_minus_baseline": -0.05141096744318385,
+    "ci_lower": -0.05511942889774425,
+    "ci_upper": -0.047845295723379686,
+    "draws": 200,
+    "seed": 20261101
+  },
+  "eda": {
+    "overall": {
+      "rows": 678013,
+      "claims": 36102,
+      "exposure": 358499.44546298374,
+      "frequency": 0.10070308464041307
+    },
+    "by_area": [
+      {
+        "area": "A",
+        "rows": 103957,
+        "claims": 5063,
+        "exposure": 61969.37771240362,
+        "frequency": 0.08170164340679839
+      },
+      {
+        "area": "B",
+        "rows": 75459,
+        "claims": 3800,
+        "exposure": 43012.32393068344,
+        "frequency": 0.08834677256973826
+      },
+      {
+        "area": "C",
+        "rows": 191880,
+        "claims": 9875,
+        "exposure": 104449.00378471443,
+        "frequency": 0.09454374519793318
+      },
+      {
+        "area": "D",
+        "rows": 151596,
+        "claims": 8428,
+        "exposure": 77120.1916917434,
+        "frequency": 0.10928396072571372
+      },
+      {
+        "area": "E",
+        "rows": 137167,
+        "claims": 7805,
+        "exposure": 63819.31426978067,
+        "frequency": 0.12229839961937315
+      },
+      {
+        "area": "F",
+        "rows": 17954,
+        "claims": 1131,
+        "exposure": 8129.234073658208,
+        "frequency": 0.13912749832913135
+      }
+    ]
+  },
+  "provenance": {
+    "source_sha256": "a45363e056e2ea56408b38eeb9d4d04d7f6c6982eb7a14ed5e807c7c71807cdd",
+    "source_md5": "f8875568bf0ca622929105197e2db613",
+    "source_matches_pinned": true,
+    "code_sha256": "d825b99db2e819d31df1e19dc6915d1cb1f95a1c4c8503de8ec36907da7d4e7d",
+    "git_commit": "751e6f760489ead0f88f63cd68fb52abe19b4d4d",
+    "policy_records_redistributed": false
+  },
+  "environment": {
+    "python": "3.12.10",
+    "platform": "Windows",
+    "packages": {
+      "numpy": "2.5.4",
+      "pandas": "2.3.3",
+      "scipy": "1.18.1",
+      "scikit-learn": "1.9.1",
+      "matplotlib": "3.11.2",
+      "threadpoolctl": "3.7.0"
+    }
+  },
+  "timing": {
+    "fit_seconds": 18.417282000009436,
+    "total_seconds": 133.70792399998754
+  },
+  "limitations": [
+    "No observation-date field: policy holdout is not a temporal validation.",
+    "OpenML asserts CC0; original-insurer permission/provenance is not independently verified.",
+    "No clipping of unusual valid exposures/counts; source anomalies may affect the comparison.",
+    "Model selected on validation; test segments are exploratory, not threshold optimization.",
+    "Bootstrap interval is conditional on this split and frozen fits; not retraining uncertainty.",
+    "No causal, fairness, pricing, underwriting, claim-decision or measured business-impact claim.",
+    "Internal AI-assisted review is not external human or actuarial review.",
+    "Historical French benchmark; current Korean or KB insurance validity is untested."
+  ]
+}

@@ -9,12 +9,15 @@
 | Full offline pytest suite | **88 passed**, exit 0, 41.73 seconds on Windows / Python 3.12.10 |
 | Ruff check / format check | exit 0 |
 | Locked dependency consistency (`uv pip check`) | exit 0 |
-| Initial wheel / sdist build | exit 0; later changes require final rebuild |
-| Distribution contents | 14 wheel / 43 sdist members at that checkpoint; raw data, local runs and environment excluded |
+| Final implementation wheel / sdist build | exit 0 |
+| Distribution contents | 14 wheel / 44 sdist members; raw data, local runs and environment excluded |
 | Pinned raw source | MD5 matched; computed SHA-256 and actual audit in [source-audit.json](evidence/source-audit.json) |
 | Actual browser audit | **SKIPPED / DENIED**: file URL protocol blocked; no localhost, alternate browser or indirect workaround attempted |
-| GitHub CI | Configured; status must be checked after the implementation push |
-| Full real-data model comparison | Pending at this checkpoint; source audit is not performance evidence |
+| GitHub CI | **All three jobs success** for 751e6f7: Linux 3.12/3.13, Windows 3.12; [run 41218810116](https://github.com/KIMJINWOO0548/MotorClaimLab/actions/runs/41218810116) |
+| Full real-data model comparison | **exit 0**, 678,013 rows; [actual aggregate results](evidence/benchmark/results.json) |
+| Isolated wheel smoke | **exit 0**; separate hash-locked runtime, package imported from site-packages; outside-checkout 300-row synthetic CLI |
+| Final online fetch CLI | **exit 0**; fresh ignored output; decoded bytes match pinned MD5 |
+| Offline visual check | Actual two Matplotlib PNG charts inspected; no browser rendering/accessibility claim |
 
 Local commands:
 
@@ -43,3 +46,7 @@ The full test command uses only hand-authored synthetic observations and does no
 Initial uncompressed Python download was manually stopped after prolonged transfer without progress output. A curl attempt timed out at 120 seconds (exit 28; 11,180,737 bytes). Range resume was unsupported (exit 33). A compressed transfer then completed (exit 0; 6,999,116 transferred bytes; 69.020322 seconds), yielding **36,288,567 decoded bytes** with the exact pinned MD5. These are download outcomes, not model timings.
 
 Full local logs remain in ignored `reports/runs/bootstrap/` and `reports/runs/boolean-boundary/`. Public evidence publishes aggregates and sanitized summaries, never contract rows or per-policy predictions. No expert score, business saving or operational result is claimed.
+
+The first isolated-wheel smoke controller failed decoding a Korean Windows path from the child process. No application study had executed in that attempt. The same wheel was then run with an explicitly UTF-8 child process and completed successfully; no model code or expected results were changed.
+
+Git Credential Manager stalled during the implementation push; only the owned push process tree was stopped. A per-command existing GitHub CLI credential helper completed the normal forward push. No token, global Git configuration or credential store was changed.

@@ -31,38 +31,39 @@
 
 Files: data.py, evaluation.py, tests/test_data.py, tests/test_evaluation.py. Interfaces exactly as DESIGN.md.
 
-- [ ] Write tests for malformed/nonfinite values, duplicate IDs, stable disjoint split and seeded sample.
-- [ ] Observe expected RED before implementation; preserve command/exit evidence.
-- [ ] Implement audit, ARFF parsing, bounded source download and hashing.
-- [ ] Write independent arithmetic tests: weighted mean/count, deviance, calibration, paired bootstrap.
-- [ ] Observe RED, implement evaluation, run affected and full tests.
-- [ ] Review staged files, commit and push data/evaluation milestone.
+- [x] Write tests for malformed/nonfinite values, duplicate IDs, stable disjoint split and seeded sample.
+- [x] Observe expected RED before implementation; preserve command/exit evidence.
+- [x] Implement audit, ARFF parsing, bounded source download and hashing.
+- [x] Write independent arithmetic tests: weighted mean/count, deviance, calibration, paired bootstrap.
+- [x] Observe RED, implement evaluation, run affected and full tests.
+- [x] Review staged files, commit and push data/evaluation milestone (751e6f7).
 
 ## Task 2: Models
 
 Files: models.py, tests/test_models.py. Consumes validated train DataFrame; produces mean/poisson_glm/poisson_hgb predictors.
 
-- [ ] Tests for exposure-weighted mean, finite positive predictions, unseen categories and train-only fit.
-- [ ] Observe RED, implement fixed model pipelines, run affected/full suite.
-- [ ] Treat convergence failure as failure; do not hide warnings.
-- [ ] Commit tested model implementation.
+- [x] Tests for exposure-weighted mean, finite positive predictions, unseen categories and train-only fit.
+- [x] Observe RED, implement fixed model pipelines, run affected/full suite.
+- [x] Treat convergence failure as failure; do not hide warnings.
+- [x] Commit tested model implementation (751e6f7).
 
 ## Task 3: Reproducible CLI, EDA and report
 
 Files: eda.py, experiment.py, report.py, __main__.py, tests/test_experiment.py, tests/test_report.py.
 
-- [ ] Test real temporary CSV/ARFF input, validation model choice, overwrite refusal, CLI exit behavior, SQL totals and escaped HTML.
-- [ ] Observe RED, implement run orchestration, local-only predictions/splits, sanitized aggregate results.
-- [ ] Generate standalone HTML/Markdown/SVG from results. Render HTML in a browser and inspect desktop/mobile.
-- [ ] Run full tests and lint; commit and push working offline pipeline.
+- [x] Test real temporary CSV/ARFF input, validation model choice, overwrite refusal, CLI exit behavior, SQL totals and escaped HTML.
+- [x] Observe RED, implement run orchestration, local-only predictions/splits, sanitized aggregate results.
+- [x] Generate standalone HTML/Markdown/SVG/PNG; inspect actual offline charts and HTML/SVG structure.
+- [ ] SKIPPED / DENIED: actual browser desktop/mobile audit. User explicitly forbids alternate surfaces/server workarounds after file URL policy rejection.
+- [x] Run full tests and lint; commit and push working offline pipeline (751e6f7).
 
 ## Task 4: Actual benchmark and public evidence
 
 Files: docs/evidence/, docs/RESULTS.md, README.md, docs/STATUS.md, .github/workflows/ci.yml.
 
-- [ ] Download pinned source; record published checksum and actual dimensions.
-- [ ] Execute frozen protocol, record source/code/settings/environment and timing.
-- [ ] Review exact results and limitations; publish aggregate-only artifacts.
-- [ ] Independent AI review of leakage, metrics, outputs and packaging; fix material findings with RED/GREEN.
-- [ ] Full tests, Ruff, build and isolated-wheel smoke; run/view actual GitHub CI after push.
+- [x] Download pinned source; record published checksum and actual dimensions.
+- [x] Execute frozen protocol, record source/code/settings/environment and timing.
+- [x] Review exact results and limitations; curate aggregate-only artifacts for publication.
+- [x] Independent AI review of leakage, metrics, outputs and packaging; fix material findings with RED/GREEN.
+- [x] Full tests, Ruff, build and isolated-wheel smoke; run/view actual GitHub CI after push (41218810116, three jobs success).
 - [ ] Confirm remote visibility, latest commit and clean local working tree; report actual results and unrun checks.
