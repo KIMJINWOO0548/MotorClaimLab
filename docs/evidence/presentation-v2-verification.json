@@ -70,6 +70,13 @@
       "command": "python scripts/check_evidence.py",
       "exit_code": 0,
       "verified_original_git_blobs": 10
+    },
+    {
+      "command": "python scripts/check_presentation.py",
+      "exit_code": 0,
+      "frozen_inputs": 2,
+      "renderer_sources": 2,
+      "derived_artifacts": 8
     }
   ],
   "red_green": [
@@ -184,6 +191,33 @@
   },
   "review_boundary": "Internal AI-assisted independent-context review, not external human/actuarial review",
   "ci": {
-    "status": "pending publication run; do not infer success from workflow configuration"
+    "status": "completed",
+    "conclusion": "success",
+    "validated_implementation_commit": "782018fa96cdd94649d72da4a0b9c48bfd910151",
+    "url": "https://github.com/KIMJINWOO0548/MotorClaimLab/actions/runs/41223891243",
+    "jobs": [
+      {
+        "name": "offline-tests (ubuntu-latest, 3.13)",
+        "conclusion": "success",
+        "hash_checks": "success",
+        "tests": "success",
+        "build": "success"
+      },
+      {
+        "name": "offline-tests (windows-latest, 3.12)",
+        "conclusion": "success",
+        "hash_checks": "success",
+        "tests": "success",
+        "build": "success"
+      },
+      {
+        "name": "offline-tests (ubuntu-latest, 3.12)",
+        "conclusion": "success",
+        "hash_checks": "success",
+        "tests": "success",
+        "build": "success"
+      }
+    ],
+    "recorded_at": "2026-10-31T17:22:45.382883+00:00"
   }
 }
