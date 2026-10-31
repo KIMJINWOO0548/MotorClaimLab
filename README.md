@@ -58,9 +58,12 @@ OpenML 원본 **678,013행·12열**, 청구 **36,102건**, 노출 합계 **358,4
 .\.venv\Scripts\python.exe -m ruff format --check src tests scripts
 .\.venv\Scripts\python.exe -m build --no-isolation
 .\.venv\Scripts\python.exe scripts/check_distribution.py
+.\.venv\Scripts\python.exe scripts/check_evidence.py
 ```
 
 자동 테스트는 직접 작성한 합성 자료로 실행하며 네트워크를 사용하지 않습니다. 실제 공개 자료 실험과 별도입니다. 브라우저 접근은 URL 정책으로 차단되어 실제 브라우저 접근성 검사는 미실행입니다. 다른 서버나 브라우저 경로로 우회하지 않았습니다.
+
+`check_evidence.py`는 Git 체크아웃에서 실행하며 실제 Git blob과 공개 증거의 SHA-256을 대조합니다. 이 검사는 바이트 일치만 확인하며 자료 권리·저자·과학적 타당성을 인증하지 않습니다.
 
 ## 연구 경계
 

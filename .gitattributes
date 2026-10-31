@@ -1,3 +1,8 @@
 * text=auto eol=lf
 *.png binary
 *.jpg binary
+# Preserve exact generated evidence bytes, including platform line endings.
+docs/evidence/** -text whitespace=cr-at-eol
+# Matplotlib SVG path data intentionally contains whitespace before newlines.
+docs/evidence/benchmark/figures/*.svg whitespace=cr-at-eol,-blank-at-eol
+docs/evidence/benchmark/report.html whitespace=cr-at-eol,-blank-at-eol

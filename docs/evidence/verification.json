@@ -71,6 +71,11 @@
       "command": "browser layout/accessibility audit",
       "status": "SKIPPED/DENIED",
       "reason": "Browser URL policy rejected file protocol; no alternate server/surface/raw CDP workaround"
+    },
+    {
+      "command": "python scripts/check_evidence.py --staged",
+      "exit_code": 0,
+      "verified_git_blobs": 10
     }
   ],
   "ci": {
@@ -133,5 +138,13 @@
     "docs/evidence/benchmark/results.json": "3585e11b57460165521a43db7b21d26dd11330c47affcec820c450c0781e1a74",
     "docs/evidence/benchmark/selection.json": "987923727958b7d73fd8a01bb768dce566e58008a01848d2108affdedf6271e2",
     "docs/evidence/source-audit.json": "a896378a171cb52b59a87b6482ed793e9f6ce6a10aaa62d52007a67e2c2e7fd0"
+  },
+  "publication_integrity_recovery": {
+    "observed_at": "2026-10-31T16:27:13.109406+00:00",
+    "initial_mismatches": 5,
+    "cause": "Git text line-ending normalization",
+    "remediation": "Preserve original evidence bytes with repository-local attributes; expected artifact hashes unchanged",
+    "scientific_values_changed": false,
+    "ci_check_added": true
   }
 }

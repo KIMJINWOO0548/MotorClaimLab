@@ -38,8 +38,10 @@ jobs:
           python -m pip install --no-deps --no-build-isolation -e .
       - name: Lint and format
         run: |
-          python -m ruff check src tests
-          python -m ruff format --check src tests
+          python -m ruff check src tests scripts
+          python -m ruff format --check src tests scripts
+      - name: Verify published evidence Git blob hashes
+        run: python scripts/check_evidence.py
       - name: Offline behavior tests
         run: python -m pytest -q
       - name: Build wheel and source distribution
