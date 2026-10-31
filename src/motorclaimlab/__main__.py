@@ -6,7 +6,6 @@ import sys
 from pathlib import Path
 
 from .data import SEED, fetch_dataset
-from .experiment import run_experiment
 
 
 def main(argv=None) -> int:
@@ -14,6 +13,12 @@ def main(argv=None) -> int:
     commands = parser.add_subparsers(dest="command", required=True)
     fetch = commands.add_parser("fetch", help="Download pinned OpenML ARFF into a new target")
     fetch.add_argument("--output", type=Path, required=True)
+    render = commands.add_parser(
+        "render", help="Derive a presentation from frozen aggregate results"
+    )
+    render.add_argument("--results", type=Path, required=True)
+    render.add_argument("--selection", type=Path)
+    render.add_argument("--output", type=Path, required=True)
     run = commands.add_parser("run", help="Run frozen study and create a standalone report")
     run.add_argument("--input", type=Path, required=True)
     run.add_argument("--output", type=Path, required=True)
@@ -25,7 +30,24 @@ def main(argv=None) -> int:
     try:
         if args.command == "fetch":
             print(fetch_dataset(args.output))
+        elif args.command == "render":
+            from .presentation import render_saved
+
+            manifest = render_saved(args.results, args.output, args.selection)
+            print(
+                json.dumps(
+                    {
+                        "renderer_version": manifest["renderer_version"],
+                        "renderer_sha256": manifest["renderer_sha256"],
+                        "model_execution": False,
+                        "artifacts": len(manifest["artifacts"]),
+                    },
+                    indent=2,
+                )
+            )
         else:
+            from .experiment import run_experiment
+
             result = run_experiment(
                 args.input,
                 args.output,

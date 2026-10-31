@@ -41,7 +41,9 @@ jobs:
           python -m ruff check src tests scripts
           python -m ruff format --check src tests scripts
       - name: Verify published evidence Git blob hashes
-        run: python scripts/check_evidence.py
+        run: |
+          python scripts/check_evidence.py
+          python scripts/check_presentation.py
       - name: Offline behavior tests
         run: python -m pytest -q
       - name: Build wheel and source distribution

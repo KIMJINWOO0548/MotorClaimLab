@@ -1,0 +1,1103 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MotorClaimLab · 모델 비교 보고서</title><style>
+:root {color-scheme:light; --ink:#1d2938; --muted:#526171; --line:#d8dfe6; --accent:#176c77;}
+* {box-sizing:border-box;} body {margin:0; color:var(--ink); background:#fff; font:15px/1.6 system-ui,"Segoe UI",sans-serif;}
+main {max-width:1120px; margin:auto; padding:28px clamp(16px,4vw,40px) 48px;}
+header {border-bottom:1px solid var(--line); padding-bottom:18px;} h1 {font-size:clamp(1.5rem,3vw,2rem); margin:8px 0; line-height:1.25;}
+h2 {font-size:1.15rem; margin:0 0 12px;} h3 {font-size:1rem;} section {padding:26px 0; border-bottom:1px solid var(--line);}
+p {margin:10px 0;} .muted,.run-context,footer {color:var(--muted);} .run-context {display:flex; flex-wrap:wrap; gap:6px 22px; font-size:.9rem;}
+nav {display:flex; flex-wrap:wrap; gap:18px; font-size:.9rem;} a {color:var(--accent); text-underline-offset:3px;}
+.table-wrap {overflow-x:auto; margin:12px 0 18px;} table {width:100%; min-width:680px; border-collapse:collapse; font-variant-numeric:tabular-nums;}
+caption {text-align:left; font-weight:600; margin-bottom:8px;} th,td {padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:top;}
+th {text-align:left; font-weight:600;} td {text-align:right; white-space:nowrap;} thead {background:#f4f6f8; font-size:.87rem;}
+.selected {background:#f0f7f8;} .selected th {border-left:3px solid var(--accent);} .selection-note {display:block; font-size:.78rem; color:var(--accent); font-weight:500;}
+details {margin:14px 0; padding:10px 0; border-top:1px solid var(--line);} summary {cursor:pointer; font-weight:600;}
+pre {overflow-x:auto; background:#f6f7f9; padding:14px; font-size:.82rem;} code {overflow-wrap:anywhere;}
+figure {margin:14px 0;} figcaption {color:var(--muted); font-size:.9rem;} svg {display:block; width:100%; height:auto;}
+.notice {border-left:3px solid #8e6d37; padding-left:12px;} :focus-visible {outline:2px solid var(--accent); outline-offset:3px;}
+footer {font-size:.85rem; padding-top:22px;} li {margin:5px 0;} .condition-list dt {font-weight:600;} .condition-list dd {margin:0 0 10px;}
+</style></head><body><main>
+<header><nav aria-label="보고서 구간"><a href="#selection">모델 비교</a><a href="#uncertainty">불확실성</a><a href="#calibration">보정과 오차</a><a href="#provenance">출처</a></nav>
+<h1>자동차보험 청구 빈도 · 모델 비교</h1><p class="muted">과거 프랑스 자료에 대한 공개 데이터 실험입니다. 현재 국내 보험 업무의 적합성 또는 효과를 입증하지 않았습니다.</p>
+<div class="run-context"><span>678,013행 · openml_pinned</span><span>전체 자료 실행</span><span>노출 358,499.45년</span><span>seed 20261101</span></div>
+<div class="run-context"><span>Data <code>a45363e056e2</code></span><span>Analysis code <code>d825b99db2e8</code></span><span>Renderer 2.0</span></div></header>
+<section aria-labelledby="selection"><h2 id="selection">세 모델 비교</h2>
+<p>선택 모델: <strong>poisson_hgb</strong>. 모델 선택에는 <strong>validation</strong> 분할만 사용했습니다. Test results는 선택 이후 평가입니다.</p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Three-model comparison"><table id="model-comparison"><caption>세 모델 비교 · Three-model comparison</caption><thead><tr><th scope="col">Model</th><th scope="col">Validation deviance ↓</th><th scope="col">Test results: deviance ↓</th><th scope="col">Test weighted MAE ↓</th><th scope="col">관측 / 예측 청구 건수</th><th scope="col">관측/예측 비율</th></tr></thead><tbody><tr><th scope="row">Training mean</th><td>0.627851</td><td>0.626294</td><td>0.188820</td><td>7,220.00 / 7,204.52</td><td>1.0021</td></tr><tr><th scope="row">Poisson GLM</th><td>0.606750</td><td>0.605803</td><td>0.186772</td><td>7,220.00 / 7,203.08</td><td>1.0023</td></tr><tr class="selected"><th scope="row">Poisson HGB<span class="selection-note">검증 분할에서 선택</span></th><td>0.575899</td><td>0.574883</td><td>0.182861</td><td>7,220.00 / 7,176.99</td><td>1.0060</td></tr></tbody></table></div>
+<p class="muted">편차와 가중 MAE는 낮을수록 작게 틀립니다. 관측/예측 비율 1은 합계 일치이며, 집단별 보정이나 조건검사 통과를 의미하지 않습니다.</p>
+<details id="provenance"><summary>데이터·코드·seed·split 출처</summary><p>아래 코드 해시는 동결 실험의 분석 코드입니다. 현재 표현 renderer의 해시는 별도 presentation manifest에 기록합니다.</p><pre>{
+  &quot;data&quot;: {
+    &quot;source_matches_pinned&quot;: true,
+    &quot;source_md5&quot;: &quot;f8875568bf0ca622929105197e2db613&quot;,
+    &quot;source_sha256&quot;: &quot;a45363e056e2ea56408b38eeb9d4d04d7f6c6982eb7a14ed5e807c7c71807cdd&quot;
+  },
+  &quot;environment&quot;: {
+    &quot;packages&quot;: {
+      &quot;matplotlib&quot;: &quot;3.11.2&quot;,
+      &quot;numpy&quot;: &quot;2.5.4&quot;,
+      &quot;pandas&quot;: &quot;2.3.3&quot;,
+      &quot;scikit-learn&quot;: &quot;1.9.1&quot;,
+      &quot;scipy&quot;: &quot;1.18.1&quot;,
+      &quot;threadpoolctl&quot;: &quot;3.7.0&quot;
+    },
+    &quot;platform&quot;: &quot;Windows&quot;,
+    &quot;python&quot;: &quot;3.12.10&quot;
+  },
+  &quot;original_experiment&quot;: {
+    &quot;code_sha256&quot;: &quot;d825b99db2e819d31df1e19dc6915d1cb1f95a1c4c8503de8ec36907da7d4e7d&quot;,
+    &quot;git_commit&quot;: &quot;751e6f760489ead0f88f63cd68fb52abe19b4d4d&quot;
+  },
+  &quot;seed&quot;: 20261101,
+  &quot;selection_split&quot;: &quot;validation&quot;,
+  &quot;settings&quot;: {
+    &quot;bootstrap_draws&quot;: 200,
+    &quot;glm&quot;: {
+      &quot;alpha&quot;: 0.0001,
+      &quot;max_iter&quot;: 300,
+      &quot;tol&quot;: 1e-06
+    },
+    &quot;hgb&quot;: {
+      &quot;early_stopping&quot;: false,
+      &quot;learning_rate&quot;: 0.05,
+      &quot;loss&quot;: &quot;poisson&quot;,
+      &quot;max_iter&quot;: 100,
+      &quot;max_leaf_nodes&quot;: 15,
+      &quot;min_samples_leaf&quot;: 100
+    },
+    &quot;max_iter&quot;: 100,
+    &quot;max_rows&quot;: null,
+    &quot;seed&quot;: 20261101,
+    &quot;split_method&quot;: &quot;sha256-policy-id-60-20-20&quot;,
+    &quot;test_used_for_selection&quot;: false,
+    &quot;thread_limit&quot;: 2
+  },
+  &quot;splits&quot;: {
+    &quot;test&quot;: {
+      &quot;claims&quot;: 7220,
+      &quot;exposure&quot;: 71734.83429298601,
+      &quot;membership_sha256&quot;: &quot;d34de04bdf559c4fbab13745a7bc59c6f693c9dadb27c94f0f3891e3a3c4be0d&quot;,
+      &quot;rows&quot;: 135669
+    },
+    &quot;train&quot;: {
+      &quot;claims&quot;: 21577,
+      &quot;exposure&quot;: 214840.51823115503,
+      &quot;membership_sha256&quot;: &quot;2295601535e14bfdf16d124977749d35ccab93f8052860b012e594dd555bc025&quot;,
+      &quot;rows&quot;: 406061
+    },
+    &quot;validation&quot;: {
+      &quot;claims&quot;: 7305,
+      &quot;exposure&quot;: 71924.09293884273,
+      &quot;membership_sha256&quot;: &quot;f2dcbad889e638c0c614deec5443961be39ba9ecbe1f38306018fc6c380e6b46&quot;,
+      &quot;rows&quot;: 136283
+    }
+  }
+}</pre></details>
+<details><summary>Test-set Poisson deviance 차트</summary><figure><figcaption>노출 가중 포아송 편차 · 낮을수록 작음</figcaption><svg xmlns:xlink="http://www.w3.org/1999/xlink" width="590.4pt" height="302.4pt" viewBox="0 0 590.4 302.4" xmlns="http://www.w3.org/2000/svg" version="1.1" role="img" aria-labelledby="comparison-title"><title id="comparison-title">Test-set Poisson deviance</title>
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.11.2, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="comparison-figure_1">
+  <g id="comparison-patch_1">
+   <path d="M 0 302.4
+L 590.4 302.4
+L 590.4 0
+L 0 0
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="comparison-axes_1">
+   <g id="comparison-patch_2">
+    <path d="M 39.904146 282.398979
+L 587.39976 282.398979
+L 587.39976 18.118365
+L 39.904146 18.118365
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="comparison-matplotlib.axis_1">
+    <g id="comparison-xtick_1">
+     <g id="comparison-line2d_1">
+      <defs>
+       <path id="comparison-m8013903acc" d="M 0 0
+L 0 3.5
+" style="stroke: #000000; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#comparison-m8013903acc" x="135.893637" y="282.398979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="comparison-text_1">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="135.893637" y="296.997416" transform="rotate(-0 135.893637 296.997416)">Training mean</text>
+     </g>
+    </g>
+    <g id="comparison-xtick_2">
+     <g id="comparison-line2d_2">
+      <g>
+       <use xlink:href="#comparison-m8013903acc" x="313.651953" y="282.398979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="comparison-text_2">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="313.651953" y="296.997416" transform="rotate(-0 313.651953 296.997416)">Poisson GLM</text>
+     </g>
+    </g>
+    <g id="comparison-xtick_3">
+     <g id="comparison-line2d_3">
+      <g>
+       <use xlink:href="#comparison-m8013903acc" x="491.410269" y="282.398979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="comparison-text_3">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="491.410269" y="296.997416" transform="rotate(-0 491.410269 296.997416)">Poisson HGB</text>
+     </g>
+    </g>
+   </g>
+   <g id="comparison-matplotlib.axis_2">
+    <g id="comparison-ytick_1">
+     <g id="comparison-line2d_4">
+      <path d="M 39.904146 282.398979
+L 587.39976 282.398979
+" clip-path="url(#comparison-p48bd33035e)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="comparison-line2d_5">
+      <defs>
+       <path id="comparison-m77412a3dbf" d="M 0 0
+L -3.5 0
+" style="stroke: #000000; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#comparison-m77412a3dbf" x="39.904146" y="282.398979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="comparison-text_4">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="32.904146" y="286.197807" transform="rotate(-0 32.904146 286.197807)">0.0</text>
+     </g>
+    </g>
+    <g id="comparison-ytick_2">
+     <g id="comparison-line2d_6">
+      <path d="M 39.904146 242.210847
+L 587.39976 242.210847
+" clip-path="url(#comparison-p48bd33035e)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="comparison-line2d_7">
+      <g>
+       <use xlink:href="#comparison-m77412a3dbf" x="39.904146" y="242.210847" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="comparison-text_5">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="32.904146" y="246.009675" transform="rotate(-0 32.904146 246.009675)">0.1</text>
+     </g>
+    </g>
+    <g id="comparison-ytick_3">
+     <g id="comparison-line2d_8">
+      <path d="M 39.904146 202.022716
+L 587.39976 202.022716
+" clip-path="url(#comparison-p48bd33035e)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="comparison-line2d_9">
+      <g>
+       <use xlink:href="#comparison-m77412a3dbf" x="39.904146" y="202.022716" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="comparison-text_6">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="32.904146" y="205.821544" transform="rotate(-0 32.904146 205.821544)">0.2</text>
+     </g>
+    </g>
+    <g id="comparison-ytick_4">
+     <g id="comparison-line2d_10">
+      <path d="M 39.904146 161.834584
+L 587.39976 161.834584
+" clip-path="url(#comparison-p48bd33035e)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="comparison-line2d_11">
+      <g>
+       <use xlink:href="#comparison-m77412a3dbf" x="39.904146" y="161.834584" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="comparison-text_7">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="32.904146" y="165.633412" transform="rotate(-0 32.904146 165.633412)">0.3</text>
+     </g>
+    </g>
+    <g id="comparison-ytick_5">
+     <g id="comparison-line2d_12">
+      <path d="M 39.904146 121.646452
+L 587.39976 121.646452
+" clip-path="url(#comparison-p48bd33035e)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="comparison-line2d_13">
+      <g>
+       <use xlink:href="#comparison-m77412a3dbf" x="39.904146" y="121.646452" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="comparison-text_8">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="32.904146" y="125.445281" transform="rotate(-0 32.904146 125.445281)">0.4</text>
+     </g>
+    </g>
+    <g id="comparison-ytick_6">
+     <g id="comparison-line2d_14">
+      <path d="M 39.904146 81.458321
+L 587.39976 81.458321
+" clip-path="url(#comparison-p48bd33035e)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="comparison-line2d_15">
+      <g>
+       <use xlink:href="#comparison-m77412a3dbf" x="39.904146" y="81.458321" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="comparison-text_9">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="32.904146" y="85.257149" transform="rotate(-0 32.904146 85.257149)">0.5</text>
+     </g>
+    </g>
+    <g id="comparison-ytick_7">
+     <g id="comparison-line2d_16">
+      <path d="M 39.904146 41.270189
+L 587.39976 41.270189
+" clip-path="url(#comparison-p48bd33035e)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="comparison-line2d_17">
+      <g>
+       <use xlink:href="#comparison-m77412a3dbf" x="39.904146" y="41.270189" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="comparison-text_10">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="32.904146" y="45.069017" transform="rotate(-0 32.904146 45.069017)">0.6</text>
+     </g>
+    </g>
+    <g id="comparison-text_11">
+     <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="10.598678" y="150.258672" transform="rotate(-90 10.598678 150.258672)">Exposure-weighted deviance</text>
+    </g>
+   </g>
+   <g id="comparison-patch_3">
+    <path d="M 64.790311 282.398979
+L 206.996963 282.398979
+L 206.996963 30.703156
+L 64.790311 30.703156
+z
+" clip-path="url(#comparison-p48bd33035e)" style="fill: #9aa8b5"/>
+   </g>
+   <g id="comparison-patch_4">
+    <path d="M 242.548627 282.398979
+L 384.75528 282.398979
+L 384.75528 38.937924
+L 242.548627 38.937924
+z
+" clip-path="url(#comparison-p48bd33035e)" style="fill: #9aa8b5"/>
+   </g>
+   <g id="comparison-patch_5">
+    <path d="M 420.306943 282.398979
+L 562.513596 282.398979
+L 562.513596 51.364263
+L 420.306943 51.364263
+z
+" clip-path="url(#comparison-p48bd33035e)" style="fill: #16727c"/>
+   </g>
+   <g id="comparison-patch_6">
+    <path d="M 39.904146 282.398979
+L 39.904146 18.118365
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="comparison-patch_7">
+    <path d="M 587.39976 282.398979
+L 587.39976 18.118365
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="comparison-patch_8">
+    <path d="M 39.904146 282.398979
+L 587.39976 282.398979
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="comparison-patch_9">
+    <path d="M 39.904146 18.118365
+L 587.39976 18.118365
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="comparison-text_12">
+    <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: middle" x="135.893637" y="26.703156" transform="rotate(-0 135.893637 26.703156)">0.6263</text>
+   </g>
+   <g id="comparison-text_13">
+    <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: middle" x="313.651953" y="34.937924" transform="rotate(-0 313.651953 34.937924)">0.6058</text>
+   </g>
+   <g id="comparison-text_14">
+    <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: middle" x="491.410269" y="47.364263" transform="rotate(-0 491.410269 47.364263)">0.5749</text>
+   </g>
+   <g id="comparison-text_15">
+    <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: middle" x="313.651953" y="12.118365" transform="rotate(-0 313.651953 12.118365)">Test-set Poisson deviance</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="comparison-p48bd33035e">
+   <rect x="39.904146" y="18.118365" width="547.495614" height="264.280614"/>
+  </clipPath>
+ </defs>
+</svg>
+</figure></details></section>
+<section aria-labelledby="uncertainty"><h2 id="uncertainty">선택 모델 − 평균 기준 · 쌍체 불확실성</h2><p>편차 차이 <strong>-0.05141</strong> · 95% 쌍체 구간 <strong>[-0.05512, -0.04785]</strong> · 반복 200 · seed 20261101</p>
+<figure><figcaption>0은 편차 차이 없음, 음수는 선택 모델에 유리합니다. 하나의 쌍체 차이 구간이며 모델별 오차막대가 아닙니다.</figcaption><svg xmlns:xlink="http://www.w3.org/1999/xlink" width="590.4pt" height="180pt" viewBox="0 0 590.4 180" xmlns="http://www.w3.org/2000/svg" version="1.1" role="img" aria-labelledby="uncertainty-title"><title id="uncertainty-title">Paired deviance difference</title>
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.11.2, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="uncertainty-figure_1">
+  <g id="uncertainty-patch_1">
+   <path d="M 0 180
+L 590.4 180
+L 590.4 0
+L 0 0
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="uncertainty-axes_1">
+   <g id="uncertainty-patch_2">
+    <path d="M 14.644968 145.998979
+L 587.39976 145.998979
+L 587.39976 17.358521
+L 14.644968 17.358521
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="uncertainty-matplotlib.axis_1">
+    <g id="uncertainty-xtick_1">
+     <g id="uncertainty-line2d_1">
+      <path d="M 18.327628 145.998979
+L 18.327628 17.358521
+" clip-path="url(#uncertainty-pdd3a066c48)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.18; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="uncertainty-line2d_2">
+      <defs>
+       <path id="uncertainty-maadc962c87" d="M 0 0
+L 0 3.5
+" style="stroke: #000000; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#uncertainty-maadc962c87" x="18.327628" y="145.998979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="uncertainty-text_1">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="18.327628" y="160.596635" transform="rotate(-0 18.327628 160.596635)">−0.07</text>
+     </g>
+    </g>
+    <g id="uncertainty-xtick_2">
+     <g id="uncertainty-line2d_3">
+      <path d="M 84.937627 145.998979
+L 84.937627 17.358521
+" clip-path="url(#uncertainty-pdd3a066c48)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.18; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="uncertainty-line2d_4">
+      <g>
+       <use xlink:href="#uncertainty-maadc962c87" x="84.937627" y="145.998979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="uncertainty-text_2">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="84.937627" y="160.596635" transform="rotate(-0 84.937627 160.596635)">−0.06</text>
+     </g>
+    </g>
+    <g id="uncertainty-xtick_3">
+     <g id="uncertainty-line2d_5">
+      <path d="M 151.547625 145.998979
+L 151.547625 17.358521
+" clip-path="url(#uncertainty-pdd3a066c48)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.18; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="uncertainty-line2d_6">
+      <g>
+       <use xlink:href="#uncertainty-maadc962c87" x="151.547625" y="145.998979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="uncertainty-text_3">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="151.547625" y="160.596635" transform="rotate(-0 151.547625 160.596635)">−0.05</text>
+     </g>
+    </g>
+    <g id="uncertainty-xtick_4">
+     <g id="uncertainty-line2d_7">
+      <path d="M 218.157624 145.998979
+L 218.157624 17.358521
+" clip-path="url(#uncertainty-pdd3a066c48)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.18; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="uncertainty-line2d_8">
+      <g>
+       <use xlink:href="#uncertainty-maadc962c87" x="218.157624" y="145.998979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="uncertainty-text_4">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="218.157624" y="160.596635" transform="rotate(-0 218.157624 160.596635)">−0.04</text>
+     </g>
+    </g>
+    <g id="uncertainty-xtick_5">
+     <g id="uncertainty-line2d_9">
+      <path d="M 284.767622 145.998979
+L 284.767622 17.358521
+" clip-path="url(#uncertainty-pdd3a066c48)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.18; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="uncertainty-line2d_10">
+      <g>
+       <use xlink:href="#uncertainty-maadc962c87" x="284.767622" y="145.998979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="uncertainty-text_5">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="284.767622" y="160.596635" transform="rotate(-0 284.767622 160.596635)">−0.03</text>
+     </g>
+    </g>
+    <g id="uncertainty-xtick_6">
+     <g id="uncertainty-line2d_11">
+      <path d="M 351.377621 145.998979
+L 351.377621 17.358521
+" clip-path="url(#uncertainty-pdd3a066c48)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.18; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="uncertainty-line2d_12">
+      <g>
+       <use xlink:href="#uncertainty-maadc962c87" x="351.377621" y="145.998979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="uncertainty-text_6">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="351.377621" y="160.596635" transform="rotate(-0 351.377621 160.596635)">−0.02</text>
+     </g>
+    </g>
+    <g id="uncertainty-xtick_7">
+     <g id="uncertainty-line2d_13">
+      <path d="M 417.987619 145.998979
+L 417.987619 17.358521
+" clip-path="url(#uncertainty-pdd3a066c48)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.18; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="uncertainty-line2d_14">
+      <g>
+       <use xlink:href="#uncertainty-maadc962c87" x="417.987619" y="145.998979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="uncertainty-text_7">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="417.987619" y="160.596635" transform="rotate(-0 417.987619 160.596635)">−0.01</text>
+     </g>
+    </g>
+    <g id="uncertainty-xtick_8">
+     <g id="uncertainty-line2d_15">
+      <path d="M 484.597618 145.998979
+L 484.597618 17.358521
+" clip-path="url(#uncertainty-pdd3a066c48)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.18; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="uncertainty-line2d_16">
+      <g>
+       <use xlink:href="#uncertainty-maadc962c87" x="484.597618" y="145.998979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="uncertainty-text_8">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="484.597618" y="160.596635" transform="rotate(-0 484.597618 160.596635)">0.00</text>
+     </g>
+    </g>
+    <g id="uncertainty-xtick_9">
+     <g id="uncertainty-line2d_17">
+      <path d="M 551.207616 145.998979
+L 551.207616 17.358521
+" clip-path="url(#uncertainty-pdd3a066c48)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.18; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="uncertainty-line2d_18">
+      <g>
+       <use xlink:href="#uncertainty-maadc962c87" x="551.207616" y="145.998979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="uncertainty-text_9">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="551.207616" y="160.596635" transform="rotate(-0 551.207616 160.596635)">0.01</text>
+     </g>
+    </g>
+    <g id="uncertainty-text_10">
+     <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="301.022364" y="174.597416" transform="rotate(-0 301.022364 174.597416)">Selected - baseline deviance (negative favors selected)</text>
+    </g>
+   </g>
+   <g id="uncertainty-matplotlib.axis_2"/>
+   <g id="uncertainty-zero-reference">
+    <path d="M 484.597618 145.998979
+L 484.597618 17.358521
+" clip-path="url(#uncertainty-pdd3a066c48)" style="fill: none; stroke-dasharray: 4.44,1.92; stroke-dashoffset: 0; stroke: #596574; stroke-width: 1.2"/>
+   </g>
+   <g id="uncertainty-paired-ci">
+    <path d="M 117.44711 81.67875
+L 165.90011 81.67875
+" clip-path="url(#uncertainty-pdd3a066c48)" style="fill: none; stroke: #16727c; stroke-width: 4"/>
+   </g>
+   <g id="uncertainty-LineCollection_1">
+    <path d="M 117.44711 89.397177
+L 117.44711 73.960323
+" clip-path="url(#uncertainty-pdd3a066c48)" style="fill: none; stroke: #16727c; stroke-width: 1.4"/>
+    <path d="M 165.90011 89.397177
+L 165.90011 73.960323
+" clip-path="url(#uncertainty-pdd3a066c48)" style="fill: none; stroke: #16727c; stroke-width: 1.4"/>
+   </g>
+   <g id="uncertainty-paired-point">
+    <path d="M 142.149171 81.67875
+" clip-path="url(#uncertainty-pdd3a066c48)" style="fill: none; stroke: #152b40; stroke-width: 1.5; stroke-linecap: square"/>
+    <defs>
+     <path id="uncertainty-m173dc82252" d="M 0 4.949747
+L 4.949747 0
+L 0 -4.949747
+L -4.949747 0
+z
+" style="stroke: #152b40; stroke-linejoin: miter"/>
+    </defs>
+    <g clip-path="url(#uncertainty-pdd3a066c48)">
+     <use xlink:href="#uncertainty-m173dc82252" x="142.149171" y="81.67875" style="fill: #152b40; stroke: #152b40; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="uncertainty-patch_3">
+    <path d="M 14.644968 145.998979
+L 587.39976 145.998979
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="uncertainty-text_11">
+    <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: end" x="113.44711" y="65.67875" transform="rotate(-0 113.44711 65.67875)">-0.05512</text>
+   </g>
+   <g id="uncertainty-text_12">
+    <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: start" x="169.90011" y="65.67875" transform="rotate(-0 169.90011 65.67875)">-0.04785</text>
+   </g>
+   <g id="uncertainty-text_13">
+    <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: middle" x="142.149171" y="104.67875" transform="rotate(-0 142.149171 104.67875)">difference -0.05141</text>
+   </g>
+   <g id="uncertainty-text_14">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="484.597618" y="27.649758" transform="rotate(-0 484.597618 27.649758)">0 = no difference</text>
+   </g>
+   <g id="uncertainty-text_15">
+    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: start" x="14.644968" y="11.358521" transform="rotate(-0 14.644968 11.358521)">Paired deviance difference · Frozen fits and split</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="uncertainty-pdd3a066c48">
+   <rect x="14.644968" y="17.358521" width="572.754792" height="128.640457"/>
+  </clipPath>
+ </defs>
+</svg>
+</figure>
+<p class="muted">같은 정책 인덱스로 재표집한 구간입니다. 현재 분할과 이미 적합된 모델(frozen fits)에 조건부이며, 재학습·자료 수집·미래 시점의 불확실성을 포함하지 않습니다.</p></section>
+<section aria-labelledby="calibration"><h2 id="calibration">실측·예측 보정과 집단별 오차</h2>
+<figure><figcaption>예측 순위별 관측(실선·원)과 예측(파선·사각형). 단위는 청구 / 노출 연수입니다.</figcaption><svg xmlns:xlink="http://www.w3.org/1999/xlink" width="590.4pt" height="302.4pt" viewBox="0 0 590.4 302.4" xmlns="http://www.w3.org/2000/svg" version="1.1" role="img" aria-labelledby="calibration-title"><title id="calibration-title">Observed and predicted calibration</title>
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.11.2, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="calibration-figure_1">
+  <g id="calibration-patch_1">
+   <path d="M 0 302.4
+L 590.4 302.4
+L 590.4 0
+L 0 0
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="calibration-axes_1">
+   <g id="calibration-patch_2">
+    <path d="M 46.266646 268.398979
+L 587.39976 268.398979
+L 587.39976 18.118365
+L 46.266646 18.118365
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="calibration-matplotlib.axis_1">
+    <g id="calibration-xtick_1">
+     <g id="calibration-line2d_1">
+      <path d="M 70.863606 268.398979
+L 70.863606 18.118365
+" clip-path="url(#calibration-p1e9682b9ab)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="calibration-line2d_2">
+      <defs>
+       <path id="calibration-m153721c932" d="M 0 0
+L 0 3.5
+" style="stroke: #000000; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#calibration-m153721c932" x="70.863606" y="268.398979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="calibration-text_1">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="70.863606" y="282.996635" transform="rotate(-0 70.863606 282.996635)">1</text>
+     </g>
+    </g>
+    <g id="calibration-xtick_2">
+     <g id="calibration-line2d_3">
+      <path d="M 125.523516 268.398979
+L 125.523516 18.118365
+" clip-path="url(#calibration-p1e9682b9ab)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="calibration-line2d_4">
+      <g>
+       <use xlink:href="#calibration-m153721c932" x="125.523516" y="268.398979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="calibration-text_2">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="125.523516" y="282.996635" transform="rotate(-0 125.523516 282.996635)">2</text>
+     </g>
+    </g>
+    <g id="calibration-xtick_3">
+     <g id="calibration-line2d_5">
+      <path d="M 180.183427 268.398979
+L 180.183427 18.118365
+" clip-path="url(#calibration-p1e9682b9ab)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="calibration-line2d_6">
+      <g>
+       <use xlink:href="#calibration-m153721c932" x="180.183427" y="268.398979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="calibration-text_3">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="180.183427" y="282.996635" transform="rotate(-0 180.183427 282.996635)">3</text>
+     </g>
+    </g>
+    <g id="calibration-xtick_4">
+     <g id="calibration-line2d_7">
+      <path d="M 234.843337 268.398979
+L 234.843337 18.118365
+" clip-path="url(#calibration-p1e9682b9ab)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="calibration-line2d_8">
+      <g>
+       <use xlink:href="#calibration-m153721c932" x="234.843337" y="268.398979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="calibration-text_4">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="234.843337" y="282.996635" transform="rotate(-0 234.843337 282.996635)">4</text>
+     </g>
+    </g>
+    <g id="calibration-xtick_5">
+     <g id="calibration-line2d_9">
+      <path d="M 289.503248 268.398979
+L 289.503248 18.118365
+" clip-path="url(#calibration-p1e9682b9ab)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="calibration-line2d_10">
+      <g>
+       <use xlink:href="#calibration-m153721c932" x="289.503248" y="268.398979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="calibration-text_5">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="289.503248" y="282.996635" transform="rotate(-0 289.503248 282.996635)">5</text>
+     </g>
+    </g>
+    <g id="calibration-xtick_6">
+     <g id="calibration-line2d_11">
+      <path d="M 344.163158 268.398979
+L 344.163158 18.118365
+" clip-path="url(#calibration-p1e9682b9ab)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="calibration-line2d_12">
+      <g>
+       <use xlink:href="#calibration-m153721c932" x="344.163158" y="268.398979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="calibration-text_6">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="344.163158" y="282.996635" transform="rotate(-0 344.163158 282.996635)">6</text>
+     </g>
+    </g>
+    <g id="calibration-xtick_7">
+     <g id="calibration-line2d_13">
+      <path d="M 398.823069 268.398979
+L 398.823069 18.118365
+" clip-path="url(#calibration-p1e9682b9ab)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="calibration-line2d_14">
+      <g>
+       <use xlink:href="#calibration-m153721c932" x="398.823069" y="268.398979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="calibration-text_7">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="398.823069" y="282.996635" transform="rotate(-0 398.823069 282.996635)">7</text>
+     </g>
+    </g>
+    <g id="calibration-xtick_8">
+     <g id="calibration-line2d_15">
+      <path d="M 453.482979 268.398979
+L 453.482979 18.118365
+" clip-path="url(#calibration-p1e9682b9ab)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="calibration-line2d_16">
+      <g>
+       <use xlink:href="#calibration-m153721c932" x="453.482979" y="268.398979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="calibration-text_8">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="453.482979" y="282.996635" transform="rotate(-0 453.482979 282.996635)">8</text>
+     </g>
+    </g>
+    <g id="calibration-xtick_9">
+     <g id="calibration-line2d_17">
+      <path d="M 508.14289 268.398979
+L 508.14289 18.118365
+" clip-path="url(#calibration-p1e9682b9ab)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="calibration-line2d_18">
+      <g>
+       <use xlink:href="#calibration-m153721c932" x="508.14289" y="268.398979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="calibration-text_9">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="508.14289" y="282.996635" transform="rotate(-0 508.14289 282.996635)">9</text>
+     </g>
+    </g>
+    <g id="calibration-xtick_10">
+     <g id="calibration-line2d_19">
+      <path d="M 562.8028 268.398979
+L 562.8028 18.118365
+" clip-path="url(#calibration-p1e9682b9ab)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="calibration-line2d_20">
+      <g>
+       <use xlink:href="#calibration-m153721c932" x="562.8028" y="268.398979" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="calibration-text_10">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="562.8028" y="282.996635" transform="rotate(-0 562.8028 282.996635)">10</text>
+     </g>
+    </g>
+    <g id="calibration-text_11">
+     <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="316.833203" y="296.997416" transform="rotate(-0 316.833203 296.997416)">Prediction bin</text>
+    </g>
+   </g>
+   <g id="calibration-matplotlib.axis_2">
+    <g id="calibration-ytick_1">
+     <g id="calibration-line2d_21">
+      <path d="M 46.266646 250.901044
+L 587.39976 250.901044
+" clip-path="url(#calibration-p1e9682b9ab)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="calibration-line2d_22">
+      <defs>
+       <path id="calibration-m9d1341ffbc" d="M 0 0
+L -3.5 0
+" style="stroke: #000000; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#calibration-m9d1341ffbc" x="46.266646" y="250.901044" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="calibration-text_12">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="39.266646" y="254.699872" transform="rotate(-0 39.266646 254.699872)">0.05</text>
+     </g>
+    </g>
+    <g id="calibration-ytick_2">
+     <g id="calibration-line2d_23">
+      <path d="M 46.266646 216.733834
+L 587.39976 216.733834
+" clip-path="url(#calibration-p1e9682b9ab)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="calibration-line2d_24">
+      <g>
+       <use xlink:href="#calibration-m9d1341ffbc" x="46.266646" y="216.733834" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="calibration-text_13">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="39.266646" y="220.532663" transform="rotate(-0 39.266646 220.532663)">0.10</text>
+     </g>
+    </g>
+    <g id="calibration-ytick_3">
+     <g id="calibration-line2d_25">
+      <path d="M 46.266646 182.566625
+L 587.39976 182.566625
+" clip-path="url(#calibration-p1e9682b9ab)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="calibration-line2d_26">
+      <g>
+       <use xlink:href="#calibration-m9d1341ffbc" x="46.266646" y="182.566625" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="calibration-text_14">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="39.266646" y="186.365453" transform="rotate(-0 39.266646 186.365453)">0.15</text>
+     </g>
+    </g>
+    <g id="calibration-ytick_4">
+     <g id="calibration-line2d_27">
+      <path d="M 46.266646 148.399416
+L 587.39976 148.399416
+" clip-path="url(#calibration-p1e9682b9ab)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="calibration-line2d_28">
+      <g>
+       <use xlink:href="#calibration-m9d1341ffbc" x="46.266646" y="148.399416" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="calibration-text_15">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="39.266646" y="152.198244" transform="rotate(-0 39.266646 152.198244)">0.20</text>
+     </g>
+    </g>
+    <g id="calibration-ytick_5">
+     <g id="calibration-line2d_29">
+      <path d="M 46.266646 114.232206
+L 587.39976 114.232206
+" clip-path="url(#calibration-p1e9682b9ab)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="calibration-line2d_30">
+      <g>
+       <use xlink:href="#calibration-m9d1341ffbc" x="46.266646" y="114.232206" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="calibration-text_16">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="39.266646" y="118.031034" transform="rotate(-0 39.266646 118.031034)">0.25</text>
+     </g>
+    </g>
+    <g id="calibration-ytick_6">
+     <g id="calibration-line2d_31">
+      <path d="M 46.266646 80.064997
+L 587.39976 80.064997
+" clip-path="url(#calibration-p1e9682b9ab)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="calibration-line2d_32">
+      <g>
+       <use xlink:href="#calibration-m9d1341ffbc" x="46.266646" y="80.064997" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="calibration-text_17">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="39.266646" y="83.863825" transform="rotate(-0 39.266646 83.863825)">0.30</text>
+     </g>
+    </g>
+    <g id="calibration-ytick_7">
+     <g id="calibration-line2d_33">
+      <path d="M 46.266646 45.897787
+L 587.39976 45.897787
+" clip-path="url(#calibration-p1e9682b9ab)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.22; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="calibration-line2d_34">
+      <g>
+       <use xlink:href="#calibration-m9d1341ffbc" x="46.266646" y="45.897787" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="calibration-text_18">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: end" x="39.266646" y="49.696616" transform="rotate(-0 39.266646 49.696616)">0.35</text>
+     </g>
+    </g>
+    <g id="calibration-text_19">
+     <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle" x="10.598678" y="143.258672" transform="rotate(-90 10.598678 143.258672)">Claim frequency (claims / exposure year)</text>
+    </g>
+   </g>
+   <g id="calibration-line2d_35">
+    <path d="M 70.863606 257.022587
+L 125.523516 249.259673
+L 180.183427 240.692153
+L 234.843337 239.885732
+L 289.503248 231.570773
+L 344.163158 221.555104
+L 398.823069 218.189419
+L 453.482979 211.219243
+L 508.14289 181.08124
+L 562.8028 29.494757
+" clip-path="url(#calibration-p1e9682b9ab)" style="fill: none; stroke: #087e8b; stroke-width: 1.5; stroke-linecap: square"/>
+    <defs>
+     <path id="calibration-m974d525602" d="M 0 3
+C 0.795609 3 1.55874 2.683901 2.12132 2.12132
+C 2.683901 1.55874 3 0.795609 3 0
+C 3 -0.795609 2.683901 -1.55874 2.12132 -2.12132
+C 1.55874 -2.683901 0.795609 -3 0 -3
+C -0.795609 -3 -1.55874 -2.683901 -2.12132 -2.12132
+C -2.683901 -1.55874 -3 -0.795609 -3 0
+C -3 0.795609 -2.683901 1.55874 -2.12132 2.12132
+C -1.55874 2.683901 -0.795609 3 0 3
+z
+" style="stroke: #087e8b"/>
+    </defs>
+    <g clip-path="url(#calibration-p1e9682b9ab)">
+     <use xlink:href="#calibration-m974d525602" x="70.863606" y="257.022587" style="fill: #087e8b; stroke: #087e8b"/>
+     <use xlink:href="#calibration-m974d525602" x="125.523516" y="249.259673" style="fill: #087e8b; stroke: #087e8b"/>
+     <use xlink:href="#calibration-m974d525602" x="180.183427" y="240.692153" style="fill: #087e8b; stroke: #087e8b"/>
+     <use xlink:href="#calibration-m974d525602" x="234.843337" y="239.885732" style="fill: #087e8b; stroke: #087e8b"/>
+     <use xlink:href="#calibration-m974d525602" x="289.503248" y="231.570773" style="fill: #087e8b; stroke: #087e8b"/>
+     <use xlink:href="#calibration-m974d525602" x="344.163158" y="221.555104" style="fill: #087e8b; stroke: #087e8b"/>
+     <use xlink:href="#calibration-m974d525602" x="398.823069" y="218.189419" style="fill: #087e8b; stroke: #087e8b"/>
+     <use xlink:href="#calibration-m974d525602" x="453.482979" y="211.219243" style="fill: #087e8b; stroke: #087e8b"/>
+     <use xlink:href="#calibration-m974d525602" x="508.14289" y="181.08124" style="fill: #087e8b; stroke: #087e8b"/>
+     <use xlink:href="#calibration-m974d525602" x="562.8028" y="29.494757" style="fill: #087e8b; stroke: #087e8b"/>
+    </g>
+   </g>
+   <g id="calibration-line2d_36">
+    <path d="M 70.863606 252.287689
+L 125.523516 243.552276
+L 180.183427 238.732797
+L 234.843337 234.364738
+L 289.503248 230.43263
+L 344.163158 226.216797
+L 398.823069 220.184507
+L 453.482979 206.058682
+L 508.14289 183.312579
+L 562.8028 59.563348
+" clip-path="url(#calibration-p1e9682b9ab)" style="fill: none; stroke-dasharray: 5.55,2.4; stroke-dashoffset: 0; stroke: #c76d3a; stroke-width: 1.5"/>
+    <defs>
+     <path id="calibration-mb36ce26afa" d="M -3 3
+L 3 3
+L 3 -3
+L -3 -3
+z
+" style="stroke: #c76d3a; stroke-linejoin: miter"/>
+    </defs>
+    <g clip-path="url(#calibration-p1e9682b9ab)">
+     <use xlink:href="#calibration-mb36ce26afa" x="70.863606" y="252.287689" style="fill: #c76d3a; stroke: #c76d3a; stroke-linejoin: miter"/>
+     <use xlink:href="#calibration-mb36ce26afa" x="125.523516" y="243.552276" style="fill: #c76d3a; stroke: #c76d3a; stroke-linejoin: miter"/>
+     <use xlink:href="#calibration-mb36ce26afa" x="180.183427" y="238.732797" style="fill: #c76d3a; stroke: #c76d3a; stroke-linejoin: miter"/>
+     <use xlink:href="#calibration-mb36ce26afa" x="234.843337" y="234.364738" style="fill: #c76d3a; stroke: #c76d3a; stroke-linejoin: miter"/>
+     <use xlink:href="#calibration-mb36ce26afa" x="289.503248" y="230.43263" style="fill: #c76d3a; stroke: #c76d3a; stroke-linejoin: miter"/>
+     <use xlink:href="#calibration-mb36ce26afa" x="344.163158" y="226.216797" style="fill: #c76d3a; stroke: #c76d3a; stroke-linejoin: miter"/>
+     <use xlink:href="#calibration-mb36ce26afa" x="398.823069" y="220.184507" style="fill: #c76d3a; stroke: #c76d3a; stroke-linejoin: miter"/>
+     <use xlink:href="#calibration-mb36ce26afa" x="453.482979" y="206.058682" style="fill: #c76d3a; stroke: #c76d3a; stroke-linejoin: miter"/>
+     <use xlink:href="#calibration-mb36ce26afa" x="508.14289" y="183.312579" style="fill: #c76d3a; stroke: #c76d3a; stroke-linejoin: miter"/>
+     <use xlink:href="#calibration-mb36ce26afa" x="562.8028" y="59.563348" style="fill: #c76d3a; stroke: #c76d3a; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="calibration-patch_3">
+    <path d="M 46.266646 268.398979
+L 46.266646 18.118365
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="calibration-patch_4">
+    <path d="M 587.39976 268.398979
+L 587.39976 18.118365
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="calibration-patch_5">
+    <path d="M 46.266646 268.398979
+L 587.39976 268.398979
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="calibration-patch_6">
+    <path d="M 46.266646 18.118365
+L 587.39976 18.118365
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="calibration-text_20">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="70.863606" y="249.022587" transform="rotate(-0 70.863606 249.022587)">0.041</text>
+   </g>
+   <g id="calibration-text_21">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="125.523516" y="241.259673" transform="rotate(-0 125.523516 241.259673)">0.052</text>
+   </g>
+   <g id="calibration-text_22">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="180.183427" y="232.692153" transform="rotate(-0 180.183427 232.692153)">0.065</text>
+   </g>
+   <g id="calibration-text_23">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="234.843337" y="231.885732" transform="rotate(-0 234.843337 231.885732)">0.066</text>
+   </g>
+   <g id="calibration-text_24">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="289.503248" y="223.570773" transform="rotate(-0 289.503248 223.570773)">0.078</text>
+   </g>
+   <g id="calibration-text_25">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="344.163158" y="213.555104" transform="rotate(-0 344.163158 213.555104)">0.093</text>
+   </g>
+   <g id="calibration-text_26">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="398.823069" y="210.189419" transform="rotate(-0 398.823069 210.189419)">0.098</text>
+   </g>
+   <g id="calibration-text_27">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="453.482979" y="203.219243" transform="rotate(-0 453.482979 203.219243)">0.108</text>
+   </g>
+   <g id="calibration-text_28">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="508.14289" y="173.08124" transform="rotate(-0 508.14289 173.08124)">0.152</text>
+   </g>
+   <g id="calibration-text_29">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="562.8028" y="21.494757" transform="rotate(-0 562.8028 21.494757)">0.374</text>
+   </g>
+   <g id="calibration-text_30">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="70.863606" y="266.287689" transform="rotate(-0 70.863606 266.287689)">0.048</text>
+   </g>
+   <g id="calibration-text_31">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="125.523516" y="257.552276" transform="rotate(-0 125.523516 257.552276)">0.061</text>
+   </g>
+   <g id="calibration-text_32">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="180.183427" y="252.732797" transform="rotate(-0 180.183427 252.732797)">0.068</text>
+   </g>
+   <g id="calibration-text_33">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="234.843337" y="248.364738" transform="rotate(-0 234.843337 248.364738)">0.074</text>
+   </g>
+   <g id="calibration-text_34">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="289.503248" y="244.43263" transform="rotate(-0 289.503248 244.43263)">0.080</text>
+   </g>
+   <g id="calibration-text_35">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="344.163158" y="240.216797" transform="rotate(-0 344.163158 240.216797)">0.086</text>
+   </g>
+   <g id="calibration-text_36">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="398.823069" y="234.184507" transform="rotate(-0 398.823069 234.184507)">0.095</text>
+   </g>
+   <g id="calibration-text_37">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="453.482979" y="220.058682" transform="rotate(-0 453.482979 220.058682)">0.116</text>
+   </g>
+   <g id="calibration-text_38">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="508.14289" y="197.312579" transform="rotate(-0 508.14289 197.312579)">0.149</text>
+   </g>
+   <g id="calibration-text_39">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans'; text-anchor: middle" x="562.8028" y="73.563348" transform="rotate(-0 562.8028 73.563348)">0.330</text>
+   </g>
+   <g id="calibration-text_40">
+    <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: middle" x="316.833203" y="12.118365" transform="rotate(-0 316.833203 12.118365)">Calibration by prediction bin — Poisson HGB</text>
+   </g>
+   <g id="calibration-legend_1">
+    <g id="calibration-line2d_37">
+     <path d="M 55.266646 31.216803
+L 65.266646 31.216803
+L 75.266646 31.216803
+" style="fill: none; stroke: #087e8b; stroke-width: 1.5; stroke-linecap: square"/>
+     <g>
+      <use xlink:href="#calibration-m974d525602" x="65.266646" y="31.216803" style="fill: #087e8b; stroke: #087e8b"/>
+     </g>
+    </g>
+    <g id="calibration-text_41">
+     <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="83.266646" y="34.716803" transform="rotate(-0 83.266646 34.716803)">Observed rate</text>
+    </g>
+    <g id="calibration-line2d_38">
+     <path d="M 55.266646 46.217584
+L 65.266646 46.217584
+L 75.266646 46.217584
+" style="fill: none; stroke-dasharray: 5.55,2.4; stroke-dashoffset: 0; stroke: #c76d3a; stroke-width: 1.5"/>
+     <g>
+      <use xlink:href="#calibration-mb36ce26afa" x="65.266646" y="46.217584" style="fill: #c76d3a; stroke: #c76d3a; stroke-linejoin: miter"/>
+     </g>
+    </g>
+    <g id="calibration-text_42">
+     <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start" x="83.266646" y="49.717584" transform="rotate(-0 83.266646 49.717584)">Predicted rate</text>
+    </g>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="calibration-p1e9682b9ab">
+   <rect x="46.266646" y="18.118365" width="541.133114" height="250.280614"/>
+  </clipPath>
+ </defs>
+</svg>
+</figure>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Calibration values"><table><caption>보정 구간의 실제 값 · 빈도 단위: 청구 / 노출 연수</caption><thead><tr><th scope="col">Bin</th><th scope="col">Rows</th><th scope="col">노출 연수</th><th scope="col">관측 빈도</th><th scope="col">예측 빈도</th><th scope="col">관측 청구</th><th scope="col">예측 청구</th></tr></thead><tbody><tr><th scope="row">1</th><td>13,567</td><td>8,527.89</td><td>0.041042</td><td>0.047971</td><td>350.00</td><td>409.09</td></tr><tr><th scope="row">2</th><td>13,567</td><td>8,091.30</td><td>0.052402</td><td>0.060754</td><td>424.00</td><td>491.58</td></tr><tr><th scope="row">3</th><td>13,567</td><td>7,437.68</td><td>0.064940</td><td>0.067807</td><td>483.00</td><td>504.33</td></tr><tr><th scope="row">4</th><td>13,567</td><td>7,546.92</td><td>0.066120</td><td>0.074199</td><td>499.00</td><td>559.97</td></tr><tr><th scope="row">5</th><td>13,567</td><td>8,098.33</td><td>0.078288</td><td>0.079953</td><td>634.00</td><td>647.49</td></tr><tr><th scope="row">6</th><td>13,567</td><td>7,864.90</td><td>0.092945</td><td>0.086123</td><td>731.00</td><td>677.35</td></tr><tr><th scope="row">7</th><td>13,567</td><td>7,438.45</td><td>0.097870</td><td>0.094950</td><td>728.00</td><td>706.28</td></tr><tr><th scope="row">8</th><td>13,567</td><td>5,912.83</td><td>0.108070</td><td>0.115622</td><td>639.00</td><td>683.65</td></tr><tr><th scope="row">9</th><td>13,567</td><td>5,920.87</td><td>0.152174</td><td>0.148908</td><td>901.00</td><td>881.67</td></tr><tr><th scope="row">10</th><td>13,566</td><td>4,895.67</td><td>0.374004</td><td>0.330002</td><td>1,831.00</td><td>1,615.58</td></tr></tbody></table></div>
+<p>Sparse: 행 수 50개 미만 또는 노출 합계 10년 미만. 각 행의 표시는 유지하며, 해당 구간의 불확실성에 주의합니다.</p>
+<div class='table-wrap' tabindex='0' role='region' aria-label='Selected-model segment errors; sparse groups need caution'><table><caption>Selected-model segment errors; sparse groups need caution</caption><thead><tr><th scope='col'>Model / group</th><th scope='col'>Rows</th><th scope='col'>Exposure (years)</th><th scope='col'>Poisson deviance</th><th scope='col'>Weighted MAE</th><th scope='col'>Observed claims</th><th scope='col'>Predicted claims</th><th scope='col'>Observed / predicted</th></tr></thead><tbody><tr><th scope='row'>DrivAge: &lt;25</th><td>5,991</td><td>2,488.88</td><td>0.9870</td><td>0.3297</td><td>497.00</td><td>446.81</td><td>1.1123</td></tr><tr><th scope='row'>DrivAge: 25-39</th><td>45,697</td><td>21,678.85</td><td>0.5491</td><td>0.1714</td><td>1,952.00</td><td>2,082.88</td><td>0.9372</td></tr><tr><th scope='row'>DrivAge: 40-59</th><td>61,562</td><td>33,504.94</td><td>0.5821</td><td>0.1833</td><td>3,433.00</td><td>3,305.70</td><td>1.0385</td></tr><tr><th scope='row'>DrivAge: 60+</th><td>22,419</td><td>14,062.17</td><td>0.5245</td><td>0.1734</td><td>1,338.00</td><td>1,341.60</td><td>0.9973</td></tr><tr><th scope='row'>VehAge: &lt;5</th><td>56,453</td><td>25,896.70</td><td>0.6795</td><td>0.2145</td><td>3,104.00</td><td>3,068.63</td><td>1.0115</td></tr><tr><th scope='row'>VehAge: 5-9</th><td>34,467</td><td>20,030.69</td><td>0.5563</td><td>0.1799</td><td>1,996.00</td><td>1,933.80</td><td>1.0322</td></tr><tr><th scope='row'>VehAge: 10+</th><td>44,749</td><td>25,807.44</td><td>0.4843</td><td>0.1534</td><td>2,120.00</td><td>2,174.56</td><td>0.9749</td></tr><tr><th scope='row'>Area: A</th><td>20,760</td><td>12,332.80</td><td>0.4965</td><td>0.1531</td><td>1,035.00</td><td>1,011.24</td><td>1.0235</td></tr><tr><th scope='row'>Area: B</th><td>14,917</td><td>8,463.41</td><td>0.5125</td><td>0.1627</td><td>757.00</td><td>751.23</td><td>1.0077</td></tr><tr><th scope='row'>Area: C</th><td>38,656</td><td>21,063.28</td><td>0.5556</td><td>0.1756</td><td>2,061.00</td><td>1,987.36</td><td>1.0371</td></tr><tr><th scope='row'>Area: D</th><td>30,246</td><td>15,432.26</td><td>0.5846</td><td>0.1916</td><td>1,561.00</td><td>1,696.67</td><td>0.9200</td></tr><tr><th scope='row'>Area: E</th><td>27,541</td><td>12,828.36</td><td>0.6897</td><td>0.2181</td><td>1,578.00</td><td>1,508.51</td><td>1.0461</td></tr><tr><th scope='row'>Area: F</th><td>3,549</td><td>1,614.72</td><td>0.7473</td><td>0.2467</td><td>228.00</td><td>221.97</td><td>1.0272</td></tr></tbody></table></div></section>
+<section aria-labelledby="conditions"><h2 id="conditions">관측 지표와 기록된 조건의 구분</h2>
+<p>위 숫자는 측정값입니다. 아래는 저장된 메타데이터의 조건 기록이며 승인·규제 적합성 점수로 바꾸지 않습니다.</p>
+<dl class="condition-list"><dt>입력 식별</dt><dd>원본 바이트 일치. 원본 권리·수집 경위의 독립 검증과는 별개입니다.</dd>
+<dt>유효 관측 처리</dt><dd>자르지 않음 · 노출 1년 초과 1,224행 · 청구 4건 초과 9행.</dd></dl>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Area descriptive values"><table><caption>Descriptive Area aggregates</caption><thead><tr><th scope="col">Area</th><th scope="col">Rows</th><th scope="col">노출 연수</th><th scope="col">관측 청구</th></tr></thead><tbody><tr><th scope="row">A</th><td>103,957</td><td>61,969.38</td><td>5,063.00</td></tr><tr><th scope="row">B</th><td>75,459</td><td>43,012.32</td><td>3,800.00</td></tr><tr><th scope="row">C</th><td>191,880</td><td>104,449.00</td><td>9,875.00</td></tr><tr><th scope="row">D</th><td>151,596</td><td>77,120.19</td><td>8,428.00</td></tr><tr><th scope="row">E</th><td>137,167</td><td>63,819.31</td><td>7,805.00</td></tr><tr><th scope="row">F</th><td>17,954</td><td>8,129.23</td><td>1,131.00</td></tr></tbody></table></div></section>
+<section aria-labelledby="limits"><h2 id="limits">해석 범위</h2><ul><li>과거 프랑스 자료에 대한 공개 데이터 실험입니다.</li><li>관측 날짜가 없어 시간 순서 검증과 현재 한국 적용성을 입증하지 않았습니다.</li><li>보험료·인수·보험금 지급 또는 업무 절감 효과를 검증한 결과가 아닙니다.</li><li>내부 AI 보조 검토는 외부 인간·보험계리 전문가 검수가 아닙니다.</li><li>No observation-date field: policy holdout is not a temporal validation.</li><li>OpenML asserts CC0; original-insurer permission/provenance is not independently verified.</li><li>No clipping of unusual valid exposures/counts; source anomalies may affect the comparison.</li><li>Model selected on validation; test segments are exploratory, not threshold optimization.</li><li>Bootstrap interval is conditional on this split and frozen fits; not retraining uncertainty.</li><li>No causal, fairness, pricing, underwriting, claim-decision or measured business-impact claim.</li><li>Internal AI-assisted review is not external human or actuarial review.</li><li>Historical French benchmark; current Korean or KB insurance validity is untested.</li></ul></section>
+<footer>MotorClaimLab · renderer 2.0 · Python 3.12.10 · 출처: 저장된 집계 결과. 이 표현을 만들기 위한 재학습·재평가는 없습니다.</footer>
+</main></body></html>

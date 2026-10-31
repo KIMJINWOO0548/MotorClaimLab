@@ -19,3 +19,7 @@
 | Browser audit | SKIPPED / DENIED | file URL protocol rejected; no alternate surface/server workaround |
 
 No external human review, operational use or measured business outcome is claimed.
+
+## Renderer 2.0 supplement
+
+The saved experiment is unchanged. New renderer-only files are in `docs/evidence/presentation-v2/`; provenance and eight derived artifacts have a separate manifest. Local full suite: **104 passed**, Ruff/format and isolated wheel rendering exit 0. Actual source/renderer/artifact Git-blob verification is included in CI. Publication CI is recorded after it runs in [PRESENTATION_V2_VALIDATION.md](PRESENTATION_V2_VALIDATION.md) and its linked record. Browser execution remains SKIPPED/DENIED; no workaround occurred.

@@ -1,0 +1,189 @@
+{
+  "recorded_at": "2026-10-31T17:15:38.535951+00:00",
+  "repository": "https://github.com/KIMJINWOO0548/MotorClaimLab",
+  "branch": "main",
+  "baseline_commit": "f2ba30a0e1471d3a09e88a70e0d7aa39c590ef47",
+  "renderer_version": "2.0",
+  "renderer_sha256": "6686be563d0541412af9d1b93e573bc44023646709a926ac57d57126a0efb302",
+  "frozen_inputs": {
+    "results": {
+      "path": "docs/evidence/benchmark/results.json",
+      "sha256": "3585e11b57460165521a43db7b21d26dd11330c47affcec820c450c0781e1a74"
+    },
+    "selection": {
+      "path": "docs/evidence/benchmark/selection.json",
+      "sha256": "987923727958b7d73fd8a01bb768dce566e58008a01848d2108affdedf6271e2"
+    }
+  },
+  "real_data_model_execution": false,
+  "original_artifacts_preserved": {
+    "count": 10,
+    "expected_map_changed": false,
+    "all_git_blob_hashes_verified": true,
+    "baseline_diff_exit_code": 0,
+    "expected_map_sha256": "4e0e35241813f7af020f6ef3b242ad8c59788bbccd26a69d8d88dd1026fe1367"
+  },
+  "checks": [
+    {
+      "command": "python -m pytest -q",
+      "exit_code": 0,
+      "passed": 104,
+      "seconds": 14.14
+    },
+    {
+      "command": "python -m ruff check src tests scripts",
+      "exit_code": 0
+    },
+    {
+      "command": "python -m ruff format --check src tests scripts",
+      "exit_code": 0
+    },
+    {
+      "command": "python -m motorclaimlab render --results docs/evidence/benchmark/results.json --selection docs/evidence/benchmark/selection.json --output docs/evidence/presentation-v2",
+      "exit_code": 0,
+      "model_execution": false,
+      "derived_artifacts": 8
+    },
+    {
+      "command": "python -m build --no-isolation",
+      "exit_code": 0
+    },
+    {
+      "command": "python scripts/check_distribution.py",
+      "exit_code": 0
+    },
+    {
+      "command": "isolated wheel python -I -X utf8 -m motorclaimlab render",
+      "exit_code": 0,
+      "evidence": {
+        "exit_code": 0,
+        "outside_checkout": true,
+        "wheel_import_site_packages": true,
+        "renderer_version": "2.0",
+        "renderer_sha256": "6686be563d0541412af9d1b93e573bc44023646709a926ac57d57126a0efb302",
+        "model_execution": false,
+        "frozen_input_bytes_preserved": true,
+        "verified_derived_artifacts": 8
+      }
+    },
+    {
+      "command": "python scripts/check_evidence.py",
+      "exit_code": 0,
+      "verified_original_git_blobs": 10
+    }
+  ],
+  "red_green": [
+    {
+      "scope": "presentation behaviors",
+      "failed_before": 9,
+      "exit_before": 1,
+      "resolved": true
+    },
+    {
+      "scope": "Markdown precision/source context",
+      "failed_before": 1,
+      "exit_before": 1,
+      "resolved": true
+    },
+    {
+      "scope": "missing calibration and nonboolean identity",
+      "failed_before": 2,
+      "exit_before": 1,
+      "resolved": true
+    },
+    {
+      "scope": "publication integrity guard",
+      "failed_before": 4,
+      "exit_before": 1,
+      "passed_after": 4,
+      "exit_after": 0
+    }
+  ],
+  "tool_use": {
+    "skills": [
+      "ui-ux-pro-max",
+      "codex-auto-model-router",
+      "Superpowers TDD/verification"
+    ],
+    "uiux_skill_sha256": "798785faea346cf824b761b36cf5f47335cfaeb9c4f5082a0355247cb4e302a1",
+    "uiux_queries": [
+      {
+        "query": "confidence interval zero baseline",
+        "domain": "chart",
+        "exit_code": 0,
+        "top_result": "Time-Series Forecast",
+        "decision": "rejected; no time axis"
+      },
+      {
+        "query": "scalar uncertainty interval comparison",
+        "domain": "chart",
+        "exit_code": 0,
+        "top_result": "Multi-Variable Comparison / radar",
+        "decision": "single retry; radar rejected, precision/label caveat retained"
+      },
+      {
+        "query": "table comparison disclosure",
+        "domain": "ux",
+        "exit_code": 0,
+        "top_result": "Responsive / Table Handling",
+        "decision": "native horizontal scroll/focusable labelled table regions"
+      }
+    ],
+    "github_mcp": {
+      "tool": "github_fetch_file",
+      "usage": "three primary repository license files",
+      "sources": [
+        {
+          "repository": "mlflow/mlflow",
+          "file": "LICENSE.txt",
+          "license": "Apache-2.0",
+          "blob_sha": "db7cb10b5e330d56b40370bc178974ccabe71458"
+        },
+        {
+          "repository": "evidentlyai/evidently",
+          "file": "LICENSE",
+          "license": "Apache-2.0",
+          "blob_sha": "f339cc7fc8fe13467e1b3f3a7afa02b29714b2bb"
+        },
+        {
+          "repository": "scikit-learn/scikit-learn",
+          "file": "COPYING",
+          "license": "BSD-3-Clause",
+          "blob_sha": "3d7ee432c15b685eaa654b6abe8f8e3ea8126a8d"
+        }
+      ]
+    },
+    "context7": {
+      "library": "/websites/matplotlib_stable",
+      "tools": [
+        "resolve_library_id",
+        "query_docs"
+      ],
+      "applied": "hlines, axvline, SVG Date/hashsalt and inline ID namespaces"
+    },
+    "observed_leaf_routes": [
+      {
+        "model": "gpt-6-luna",
+        "effort": "high",
+        "task": "reference/license adoption note"
+      },
+      {
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "task": "independent renderer review"
+      }
+    ],
+    "coordinator_model_switch": false
+  },
+  "visual_evidence": {
+    "method": "actual Matplotlib paired-difference/calibration PNG inspection and offline HTML/SVG structures",
+    "preview_bytes_match_published_pngs": true,
+    "upstream_image": "official MLflow 3.0.0rc3 model-table image observed by supervisory researcher; no fresh owner browser audit",
+    "browser_status": "SKIPPED/DENIED",
+    "browser_workaround_used": false
+  },
+  "review_boundary": "Internal AI-assisted independent-context review, not external human/actuarial review",
+  "ci": {
+    "status": "pending publication run; do not infer success from workflow configuration"
+  }
+}

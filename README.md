@@ -4,7 +4,9 @@
 
 보험 가입 기간이 다른 계약을 공정하게 비교하면서, 단순 평균·포아송 회귀·부스팅 모델의 예측과 집단별 과소·과대예측을 평가합니다. 채용 포트폴리오를 위한 개인 프로젝트이며 KB손해보험 또는 다른 보험사의 의뢰·검증·운영 시스템이 아닙니다.
 
-현재 단계: **전체 678,013행 실험·88개 테스트·실제 3개 CI 작업 검증 완료**. 검증 분할에서 선택한 부스팅 모델의 테스트 포아송 편차가 평균 기준 모델 대비 **8.21% 낮았습니다**. 과거 프랑스 자료의 고정 분할 결과이며 업무 효과를 주장하지 않습니다.
+현재 단계: **전체 678,013행의 동결 실험과 renderer 2.0**. 로컬 전체 **104개 테스트**가 통과했고, 기존 실험은 실제 3개 CI 작업으로 검증됐습니다. 검증 분할에서 선택한 부스팅 모델의 테스트 포아송 편차가 평균 기준 모델 대비 **8.21% 낮았습니다**. 과거 프랑스 자료의 고정 분할 결과이며 업무 효과를 주장하지 않습니다.
+
+새 [presentation v2 HTML](docs/evidence/presentation-v2/report.html)은 세 모델 비교표, 데이터·코드·seed·split 출처 접기, 0 기준선이 있는 쌍체 구간을 제공합니다. MLflow·Evidently·scikit-learn에서 채택한 패턴과 제외한 부분은 [실제 적용 기록](docs/REFERENCE_ADOPTION.md)에 있습니다. 새 UI는 재학습 없이 같은 결과 JSON에서 파생했으며 [별도 renderer·입력·출력 해시](docs/evidence/presentation-v2/presentation.json)로 추적합니다. 원래 10개 실험 증거와 예상 해시는 보존했습니다.
 
 | 모델 | 검증 포아송 편차 | 테스트 포아송 편차 | 테스트 관측 / 예측 청구 |
 | --- | ---: | ---: | ---: |
@@ -38,6 +40,12 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m motorclaimlab run --input data/raw/freMTPL2freq.arff --output reports/runs/my-study
 ```
 
+모델 실행 없이 저장된 결과의 새 표현만 만들려면 새 출력 경로를 사용합니다.
+
+```powershell
+.\.venv\Scripts\python.exe -m motorclaimlab render --results docs/evidence/benchmark/results.json --selection docs/evidence/benchmark/selection.json --output reports/runs/my-presentation
+```
+
 `fetch`는 기존 원본을, `run`은 기존 출력 디렉터리를 덮어쓰지 않습니다. 재실행에는 새 출력 경로를 지정하세요. 다운로드는 체크섬을 검증합니다. 모든 모델과 전처리는 학습 자료에만 적합하고 검증 자료로 모델을 선택한 뒤 테스트 자료를 평가합니다.
 
 작은 탐색 실행은 `run`에 `--max-rows 50000 --max-iter 30 --bootstrap-draws 50`을 추가할 수 있습니다. 표본·설정 변경 사실이 결과에 기록되며 전체 고정 프로토콜 실행과 구분됩니다.
@@ -59,11 +67,14 @@ OpenML 원본 **678,013행·12열**, 청구 **36,102건**, 노출 합계 **358,4
 .\.venv\Scripts\python.exe -m build --no-isolation
 .\.venv\Scripts\python.exe scripts/check_distribution.py
 .\.venv\Scripts\python.exe scripts/check_evidence.py
+.\.venv\Scripts\python.exe scripts/check_presentation.py
 ```
 
 자동 테스트는 직접 작성한 합성 자료로 실행하며 네트워크를 사용하지 않습니다. 실제 공개 자료 실험과 별도입니다. 브라우저 접근은 URL 정책으로 차단되어 실제 브라우저 접근성 검사는 미실행입니다. 다른 서버나 브라우저 경로로 우회하지 않았습니다.
 
 `check_evidence.py`는 Git 체크아웃에서 실행하며 실제 Git blob과 공개 증거의 SHA-256을 대조합니다. 이 검사는 바이트 일치만 확인하며 자료 권리·저자·과학적 타당성을 인증하지 않습니다.
+
+`check_presentation.py`는 새 표현의 동결 입력·renderer 소스·산출물을 별도로 대조합니다. [표현 개선 설계](docs/PRESENTATION_V2.md)는 기존 실험의 모델 선택·평가와 구분됩니다.
 
 ## 연구 경계
 
