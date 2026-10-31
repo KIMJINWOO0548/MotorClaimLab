@@ -146,5 +146,29 @@
     "remediation": "Preserve original evidence bytes with repository-local attributes; expected artifact hashes unchanged",
     "scientific_values_changed": false,
     "ci_check_added": true
+  },
+  "ci_evidence_integrity": {
+    "head_sha": "dda7b54054d38ad652bfa5a7103c9b1515102695",
+    "url": "https://github.com/KIMJINWOO0548/MotorClaimLab/actions/runs/41219758581",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "name": "offline-tests (ubuntu-latest, 3.13)",
+        "conclusion": "success"
+      },
+      {
+        "name": "offline-tests (ubuntu-latest, 3.12)",
+        "conclusion": "success"
+      },
+      {
+        "name": "offline-tests (windows-latest, 3.12)",
+        "conclusion": "success"
+      }
+    ]
+  },
+  "distribution_contents": {
+    "wheel_members": 14,
+    "sdist_members": 49,
+    "raw_data_local_runs_environment_excluded": true
   }
 }

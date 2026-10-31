@@ -66,4 +66,4 @@ Files: docs/evidence/, docs/RESULTS.md, README.md, docs/STATUS.md, .github/workf
 - [x] Review exact results and limitations; curate aggregate-only artifacts for publication.
 - [x] Independent AI review of leakage, metrics, outputs and packaging; fix material findings with RED/GREEN.
 - [x] Full tests, Ruff, build and isolated-wheel smoke; run/view actual GitHub CI after push (41218810116, three jobs success).
-- [ ] Confirm remote visibility, latest commit and clean local working tree; report actual results and unrun checks.
+- [x] Confirm public remote/main and clean working tree at dda7b54; CI 41219758581 success. Actual results and browser SKIPPED are recorded in README/STATUS/VALIDATION.
