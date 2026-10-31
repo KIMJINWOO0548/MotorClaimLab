@@ -111,8 +111,32 @@
     "ruff": "0.17.3"
   },
   "ci": {
-    "status": "PENDING publication",
-    "head_sha": null,
-    "url": null
+    "status": "completed",
+    "conclusion": "success",
+    "head_sha": "7323b70939642a80e0f71bc61474aad58838a62e",
+    "url": "https://github.com/KIMJINWOO0548/MotorClaimLab/actions/runs/41226676309",
+    "jobs": [
+      {
+        "name": "offline-tests (ubuntu-latest, 3.13)",
+        "conclusion": "success",
+        "url": "https://github.com/KIMJINWOO0548/MotorClaimLab/actions/runs/41226676309/job/124612165136"
+      },
+      {
+        "name": "offline-tests (windows-latest, 3.12)",
+        "conclusion": "success",
+        "url": "https://github.com/KIMJINWOO0548/MotorClaimLab/actions/runs/41226676309/job/124612165307"
+      },
+      {
+        "name": "offline-tests (ubuntu-latest, 3.12)",
+        "conclusion": "success",
+        "url": "https://github.com/KIMJINWOO0548/MotorClaimLab/actions/runs/41226676309/job/124612165332"
+      }
+    ]
+  },
+  "dependency_check": {
+    "command": "uv pip check --python .venv/Scripts/python.exe",
+    "exit_code": 0,
+    "packages": 32,
+    "pip_module_check": "SKIPPED: pip module absent; used installed uv checker"
   }
 }

@@ -39,4 +39,8 @@ Actual HTML browser layout, responsive viewports, keyboard/screen-reader interac
 
 Internal AI-assisted review is not external human, actuarial or insurer review. Historical French data and a fixed split do not establish current Korean applicability, temporal generalization, pricing/underwriting/claim-decision fitness or measured business effects.
 
-Publication CI is checked only after push; its actual source SHA and run URL will be recorded below after observation.
+## Observed publication CI
+
+Implementation commit `7323b70939642a80e0f71bc61474aad58838a62e` was pushed to `main`. Actual [CI run 41226676309](https://github.com/KIMJINWOO0548/MotorClaimLab/actions/runs/41226676309) completed **success** on all three jobs: Ubuntu Python 3.12, Ubuntu Python 3.13 and Windows Python 3.12. Their lint, original/current Git-blob hashes, behavior tests, wheel/sdist builds and local-data exclusion steps passed. Existing GitHub action runtime/runner migration notices were warnings, not failed checks.
+
+`uv pip check --python .venv/Scripts/python.exe` also passed for all 32 installed packages. An optional `python -m pip check` attempt could not run because this uv-created environment contains no pip module; the installed uv checker provided the dependency check without adding a package.

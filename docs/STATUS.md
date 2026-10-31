@@ -10,7 +10,7 @@
 | Models and evaluation | IMPLEMENTED + synthetic VERIFIED | Three frozen models; weighted metrics and paired bootstrap |
 | CLI and report | IMPLEMENTED + synthetic VERIFIED | Real temporary CSV CLI; source/overwrite boundaries; report regressions |
 | Real-data model experiment | VERIFIED | Full 678,013 rows; selected poisson_hgb; test deviance 0.574883; RESULTS.md |
-| Automated verification | 88 passed | Full local suite exit 0; Ruff/format/dependency checks passed |
+| Automated verification | 108 passed | Current full local suite exit 0; Ruff/format/uv dependency checks passed |
 | CI | VERIFIED | Analysis 751e6f7/run 41218810116; evidence integrity dda7b54/run 41219758581; Windows 3.12 / Linux 3.12 and 3.13 success |
 | Isolated wheel installation and execution | VERIFIED | Separate runtime environment; 300-row synthetic CLI outside checkout, exit 0 |
 | Final online fetch CLI | VERIFIED | Fresh source directory, gzip transport and pinned checksum, exit 0 |
@@ -26,4 +26,4 @@ The saved experiment is unchanged. New renderer-only files are in `docs/evidence
 
 ## Renderer 3.0 visual supplement
 
-The explicit user request for a bolder, distinctive UI is implemented in a chart-led petrol/coral opening and light analytical content. The local full suite now passes **108 tests**, including a reproduced missing-calibration warning/legend overlap regression and offline contrast/navigation checks. Outputs are separate in `docs/evidence/presentation-v3/`; original and v2 evidence remain unchanged. [PRESENTATION_V3_VALIDATION.md](PRESENTATION_V3_VALIDATION.md) records packaging, publication and CI results when actually observed. Actual browser layout/keyboard/responsive/print/accessibility execution remains SKIPPED/DENIED; no alternate server or browser surface was used.
+The explicit user request for a bolder, distinctive UI is implemented in a chart-led petrol/coral opening and light analytical content. The local full suite now passes **108 tests**, including a reproduced missing-calibration warning/legend overlap regression and offline contrast/navigation checks. Outputs are separate in `docs/evidence/presentation-v3/`; original and v2 evidence remain unchanged. Implementation `7323b70` passed all three Windows/Linux CI jobs in actual run `41226676309`. [PRESENTATION_V3_VALIDATION.md](PRESENTATION_V3_VALIDATION.md) records packaging, publication and CI results. Actual browser layout/keyboard/responsive/print/accessibility execution remains SKIPPED/DENIED; no alternate server or browser surface was used.
