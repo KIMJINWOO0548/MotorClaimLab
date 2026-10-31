@@ -17,12 +17,13 @@ from matplotlib.backends.backend_svg import FigureCanvasSVG
 from matplotlib.figure import Figure
 
 _MODELS = ("mean", "poisson_glm", "poisson_hgb")
-RENDERER_VERSION = "3.0"
+RENDERER_VERSION = "3.1"
 _MODEL_LABELS = {
     "mean": "Training mean",
     "poisson_glm": "Poisson GLM",
     "poisson_hgb": "Poisson HGB",
 }
+_SEGMENT_LABELS = {"DrivAge": "운전자 연령", "VehAge": "차량 연령", "Area": "지역"}
 
 
 def write_uncertainty(results: dict, directory: Path) -> Path:
@@ -144,7 +145,7 @@ def _interval_values(results: dict):
 
 
 def _uncertainty_svg(results: dict, directory: Path | None = None) -> str:
-    figure = Figure(figsize=(8.2, 2.5), layout="constrained")
+    figure = Figure(figsize=(8.2, 2.9), layout="constrained")
     axis = figure.subplots()
     values = _interval_values(results)
     if values is None:
@@ -191,7 +192,9 @@ def _uncertainty_svg(results: dict, directory: Path | None = None) -> str:
         axis.text(0, 0.92, "0 = no difference", ha="center", fontsize=8)
         axis.set_xlabel("Selected - baseline deviance (negative favors selected)")
         axis.set_title(
-            "Paired deviance difference · Frozen fits and split", loc="left", fontsize=11
+            f"{_MODEL_LABELS.get(results.get('selected_model'), results.get('selected_model', 'N/A'))} - Training mean\n95% paired interval (bootstrap) · Frozen fits and split",
+            loc="left",
+            fontsize=11,
         )
         axis.grid(axis="x", alpha=0.18)
         for name in ("top", "right", "left"):
@@ -201,6 +204,47 @@ def _uncertainty_svg(results: dict, directory: Path | None = None) -> str:
         figure.savefig(directory / "paired-difference.png", dpi=160)
     figure.clear()
     return svg
+
+
+def _calibration_support(results: dict) -> str:
+    """Describe the highest saved rank with the same repeated-bin totals as the plot."""
+    rows = results.get("calibration", {}).get(results.get("selected_model"), [])
+    unavailable = "Support unavailable (N/A)"
+    try:
+        ranks = [float(row["bin"]) for row in rows]
+        if (
+            not ranks
+            or any(isinstance(row["bin"], bool) for row in rows)
+            or not all(map(math.isfinite, ranks))
+        ):
+            return unavailable
+        rank = max(ranks)
+        group = [row for row, value in zip(rows, ranks, strict=True) if value == rank]
+        columns = ("rows", "exposure", "observed_claims", "predicted_claims")
+        values = []
+        for row in group:
+            if any(isinstance(row[name], bool) for name in columns):
+                return unavailable
+            count, exposure, observed, predicted = [float(row[name]) for name in columns]
+            if (
+                not all(map(math.isfinite, (count, exposure, observed, predicted)))
+                or count < 0
+                or not count.is_integer()
+                or exposure <= 0
+                or observed < 0
+                or predicted < 0
+            ):
+                return unavailable
+            values.append((count, exposure, observed, predicted))
+        count, exposure, observed, predicted = [
+            math.fsum(column) for column in zip(*values, strict=True)
+        ]
+        return (
+            f"Bin {rank:g} · {_integer(count)} rows · {_number(exposure, 2)} exposure-years\n"
+            f"Observed {_number(observed, 2)} claims / Predicted {_number(predicted, 2)} claims"
+        )
+    except (KeyError, TypeError, ValueError, OverflowError):
+        return unavailable
 
 
 def _figures(results: dict, directory: Path | None = None) -> tuple[str, str]:
@@ -233,6 +277,11 @@ def _figures(results: dict, directory: Path | None = None) -> tuple[str, str]:
     for name in ("top", "right", "left"):
         axis.spines[name].set_visible(False)
     axis.set_axisbelow(True)
+    comparison.supxlabel(
+        f"Selected on validation: {_MODEL_LABELS.get(results.get('selected_model'), results.get('selected_model', 'N/A'))}; test shown after selection.",
+        fontsize=8,
+        color="#526574",
+    )
     for bar, value in zip(bars, vals, strict=True):
         axis.annotate(
             _number(value, 6),
@@ -312,11 +361,11 @@ def _figures(results: dict, directory: Path | None = None) -> tuple[str, str]:
         if not math.isfinite(value) or x not in (0, len(labels) - 1):
             continue
         axis.annotate(
-            _number(value, 3),
+            f"Observed {_number(value, 3)}" if x == len(labels) - 1 else _number(value, 3),
             (x, value),
-            xytext=(0, 8),
+            xytext=(8, 8) if x == len(labels) - 1 else (0, 8),
             textcoords="offset points",
-            ha="center",
+            ha="left" if x == len(labels) - 1 else "center",
             fontsize=8,
             color="#8ec7ef",
         )
@@ -324,11 +373,11 @@ def _figures(results: dict, directory: Path | None = None) -> tuple[str, str]:
         if not math.isfinite(value) or x not in (0, len(labels) - 1):
             continue
         axis.annotate(
-            _number(value, 3),
+            f"Predicted {_number(value, 3)}" if x == len(labels) - 1 else _number(value, 3),
             (x, value),
-            xytext=(0, -14),
+            xytext=(8, -14) if x == len(labels) - 1 else (0, -14),
             textcoords="offset points",
-            ha="center",
+            ha="left" if x == len(labels) - 1 else "center",
             fontsize=8,
             color="#ff956d",
         )
@@ -344,6 +393,8 @@ def _figures(results: dict, directory: Path | None = None) -> tuple[str, str]:
     axis.set_ylabel("Claim frequency (claims / exposure year)", color="#c4d4dd", labelpad=10)
     axis.tick_params(colors="#c4d4dd", length=0, pad=8)
     axis.margins(x=0.1, y=0.18)
+    if labels:
+        axis.set_xlim(-0.6, max(len(labels) - 1, 1) + 2)
     axis.set_axisbelow(True)
     axis.grid(axis="y", color="#c4d4dd", alpha=0.14)
     axis.legend(frameon=False, labelcolor="#ffffff", loc="upper left")
@@ -358,6 +409,9 @@ def _figures(results: dict, directory: Path | None = None) -> tuple[str, str]:
             fontsize=10,
             color="#ff956d",
         )
+    calibration.supxlabel(
+        _calibration_support(results), fontsize=9, color="#c4d4dd", ha="left", x=0.025
+    )
     calibration_svg = _figure_svg(calibration, "calibration")
     if directory is not None:
         calibration.savefig(directory / "calibration.png", dpi=160)
@@ -412,7 +466,7 @@ def render_markdown(results: dict) -> str:
     else:
         point, lower, upper = values
         lines.append(
-            f"선택 − 평균 기준: **{point:.5f}**; 95% paired interval **[{lower:.5f}, {upper:.5f}]**."
+            f"{_e(_MODEL_LABELS.get(results.get('selected_model'), results.get('selected_model', 'N/A')))} − Training mean: **{point:.5f}**; 95% paired interval **[{lower:.5f}, {upper:.5f}]**."
         )
         lines.append(
             f"반복 {_integer(results.get('bootstrap', {}).get('draws'))}; seed {_e(results.get('bootstrap', {}).get('seed', 'N/A'))}."
@@ -533,6 +587,22 @@ def _calibration_table(rows: list[dict]) -> str:
     )
 
 
+def _segment_sections(results: dict) -> str:
+    dimensions: dict[str, list] = {}
+    for row in results.get("segments", []):
+        name = str(row.get("segment", "기록 없음"))
+        dimensions.setdefault(name, []).append((str(row.get("group", "기록 없음")), row))
+    return "".join(
+        '<details class="segment-dimension" open><summary>'
+        + f"{_e(_SEGMENT_LABELS.get(name, name))} · {len(rows)}개 기존 집단</summary>"
+        + _metric_table(
+            rows, f"{_SEGMENT_LABELS.get(name, name)} ({name}) · 선택 모델의 저장된 집단별 오차"
+        )
+        + "</details>"
+        for name, rows in dimensions.items()
+    )
+
+
 def render_report(results: dict) -> str:
     """Present saved measurements through an automotive-inspired visual study."""
     study, audit = results.get("study", {}), results.get("audit", {})
@@ -548,16 +618,12 @@ def render_report(results: dict) -> str:
     else:
         point, lower, upper = values
         interval_text = (
-            f"<p>편차 차이 <strong>{point:.5f}</strong> · 95% 쌍체 구간 "
+            f"<p>{_e(_MODEL_LABELS.get(selected, selected))} − Training mean · 편차 차이 <strong>{point:.5f}</strong> · 95% 쌍체 구간 "
             f"<strong>[{lower:.5f}, {upper:.5f}]</strong> · 반복 {_integer(boot.get('draws'))}"
             f" · seed {_e(boot.get('seed', 'N/A'))}</p>"
         )
         if selected == "mean":
             interval_text += "<p>기준 모델과 동일한 비교입니다. 개선 효과를 주장하지 않습니다.</p>"
-    segments = [
-        (f"{row.get('segment', '')}: {row.get('group', '')}", row)
-        for row in results.get("segments", [])
-    ]
     calibration_rows = results.get("calibration", {}).get(selected, [])
     area_rows = "".join(
         f'<tr><th scope="row">{_e(row.get("area", row.get("Area", "")))}</th>'
@@ -630,7 +696,7 @@ figure {{margin:24px 0;}} figcaption {{color:var(--muted); font-size:.87rem; mar
 <figure class="hero-plot">{calibration}<figcaption>예측 순위별 관측(실선·원)과 예측(파선·사각형). 청구 / 노출 연수. 가로축은 시간 흐름이 아닌 예측 순위입니다. <a href="#calibration" style="color:#ff956d">보정 구간의 실제 값 보기</a></figcaption></figure></div>
 <div class="study-context"><span><strong>{_integer(study.get("rows"))}</strong> 계약 행</span><span>노출 <strong>{_number(audit.get("exposure"), 2)}</strong>년</span><span>{"전체 자료 실행" if study.get("sampled") is False else ("표본 실행" if study.get("sampled") is True else "표본 여부 기록 없음")}</span><span>{_e(study.get("data_kind", "기록 없음"))} / seed {_e(study.get("seed", "기록 없음"))}</span></div></header>
 <main id="report-content" tabindex="-1"><section aria-labelledby="selection"><div class="section-intro"><h2 id="selection">어떤 모델이<br>얼마나 덜 틀렸을까?</h2>
-<p>선택 모델: <strong>{_e(selected)}</strong>. 모델 선택에는 <strong>{_e(study.get("selection_split", "기록 없음"))}</strong> 분할만 사용했습니다. Test results는 선택 이후 평가입니다.</p>
+<p>선택 모델: <strong>{_e(_MODEL_LABELS.get(selected, selected))}</strong> (<code>{_e(selected)}</code>). 모델 선택에는 <strong>{_e(study.get("selection_split", "기록 없음"))}</strong> 분할만 사용했습니다. Test results는 선택 이후 평가입니다.</p>
 </div><figure><figcaption>같은 테스트 자료, 같은 노출 가중 기준. 낮은 편차는 이 분할에서 더 작은 예측 오차를 뜻합니다.</figcaption>{comparison}</figure>
 {_comparison_table(results)}
 <p class="muted">편차와 가중 MAE는 낮을수록 작게 틀립니다. 관측/예측 비율 1은 합계 일치이며, 집단별 보정이나 조건검사 통과를 의미하지 않습니다.</p>
@@ -641,8 +707,9 @@ figure {{margin:24px 0;}} figcaption {{color:var(--muted); font-size:.87rem; mar
 <div class="analysis-pair"><figure>{interval}<figcaption>선택 모델 − 평균 기준. 하나의 쌍체 차이 구간이며 모델별 오차막대가 아닙니다.</figcaption></figure><div><h3>0을 기준으로 읽는 비교</h3><p>0은 편차 차이 없음, 음수는 선택 모델에 유리합니다. 같은 정책 인덱스로 재표집한 구간입니다.</p><p>현재 분할과 이미 적합된 모델(frozen fits)에 조건부이며, 재학습·자료 수집·미래 시점의 불확실성을 포함하지 않습니다.</p></div></div></section>
 <section aria-labelledby="calibration"><div class="section-intro"><h2 id="calibration">평균이 좋아져도,<br>오차는 남습니다.</h2><p>첫 화면의 관측·예측 곡선을 실제 값으로 확인합니다. 선택 모델을 예측 순위로 나눈 구간과, 연령·차량·지역 집단의 오차를 함께 읽으세요. 합계가 비슷하더라도 구간마다 과소·과대예측이 남을 수 있습니다.</p></div>
 {_calibration_table(calibration_rows)}
-<p>Sparse: 행 수 50개 미만 또는 노출 합계 10년 미만. 각 행의 표시는 유지하며, 해당 구간의 불확실성에 주의합니다.</p>
-{_metric_table(segments, "Selected-model segment errors; sparse groups need caution")}</section>
+<h3>차원별 집단 오차 탐색</h3><p>아래 펼침 항목에서 운전자 연령·차량 연령·지역을 비교하세요. 각 표는 선택 모델 <strong>{_e(_MODEL_LABELS.get(selected, selected))}</strong>의 저장된 집단만 보여줍니다. 행 수·노출량·관측/예측 청구를 함께 읽으며, 교차 집단·다른 모델의 집단별 결과·인과 설명을 뜻하지 않습니다.</p>
+<p>관측/예측 비율이 1보다 크면 이 집단에서 과소예측, 1보다 작으면 과대예측입니다. 비율이 없으면 N/A로 표시합니다. Sparse는 행 수 50개 미만 또는 노출 합계 10년 미만을 뜻합니다. 각 행의 표시는 유지하며, 해당 구간의 불확실성에 주의합니다.</p>
+{_segment_sections(results)}</section>
 <section aria-labelledby="conditions"><h2 id="conditions">관측 지표와 기록된 조건의 구분</h2>
 <p>위 숫자는 측정값입니다. 아래는 저장된 메타데이터의 조건 기록이며 승인·규제 적합성 점수로 바꾸지 않습니다.</p>
 <dl class="condition-list"><dt>입력 식별</dt><dd>{_e(source_state)}. 원본 권리·수집 경위의 독립 검증과는 별개입니다.</dd>

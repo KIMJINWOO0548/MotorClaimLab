@@ -1,5 +1,14 @@
 # Changelog
 
+## Renderer 3.1 — 2026-11-01 KST
+
+- Retains the v3 visual direction; closes concrete v2-source/PNG review items against the current saved-result reading flow.
+- Standalone comparison/paired plots name validation selection, actual compared models, 95% bootstrap level and frozen-fit/split conditions.
+- Calibration endpoint series names and adjacent highest-rank support/counts, consistent with repeated-bin plot totals; unavailable support stays N/A.
+- Native dimension disclosures retain all 4 driver-age, 3 vehicle-age and 6 Area groups, exact support, ratios and Sparse flags. Unknown dimensions/escaped labels remain visible.
+- Four independently failing flow regressions became green; final full suite 112 passed. No metric selector/sorting/unsupported cohort feature, new statistics or refitting.
+- Original experiment, v2 and v3 evidence preserved; separate renderer 3.1 manifest and eight derived outputs.
+
 ## Renderer 3.0 — 2026-11-01 KST
 
 - Distinctive automotive-inspired opening, original lane mark and large Korean typography with the saved observed/predicted curve as the focal point.

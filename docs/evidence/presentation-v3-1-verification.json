@@ -1,0 +1,102 @@
+{
+  "repository": "https://github.com/KIMJINWOO0548/MotorClaimLab",
+  "branch": "main",
+  "baseline_commit": "a736031cda69f39deeecf00cdab2a9299ba495d5",
+  "renderer_version": "3.1",
+  "renderer_sha256": "a28b41199841acfefb523ec94145bafa00d2643172f97303f713ad9029b98969",
+  "frozen_inputs": {
+    "results": {
+      "path": "docs/evidence/benchmark/results.json",
+      "sha256": "3585e11b57460165521a43db7b21d26dd11330c47affcec820c450c0781e1a74"
+    },
+    "selection": {
+      "path": "docs/evidence/benchmark/selection.json",
+      "sha256": "987923727958b7d73fd8a01bb768dce566e58008a01848d2108affdedf6271e2"
+    }
+  },
+  "model_execution": false,
+  "review_basis": "supplied v2 PNG/source review contrasted with current v3; not browser audit",
+  "independent_red": {
+    "command": "python -m pytest tests/test_audit_closure.py -q",
+    "exit_code": 1,
+    "failed": 4
+  },
+  "targeted_green": {
+    "passed": 33,
+    "exit_code": 0
+  },
+  "full_final": {
+    "command": "python -m pytest -q",
+    "passed": 112,
+    "seconds": 21.45,
+    "exit_code": 0,
+    "process_thread_limits": 2
+  },
+  "ruff_check_exit_code": 0,
+  "ruff_format_exit_code": 0,
+  "format_correction": "one test line became 101 characters after output path version update; formatted and final checks passed",
+  "build_exit_code": 0,
+  "distribution_exit_code": 0,
+  "dependency_check": {
+    "command": "uv pip check --python .venv/Scripts/python.exe",
+    "exit_code": 0,
+    "packages": 32
+  },
+  "flow_preservation_and_wheel": {
+    "exit_code": 0,
+    "preserved_prior_public_files": 31,
+    "three_model_rows": 3,
+    "calibration_bins": 10,
+    "segment_rows_by_dimension": [
+      4,
+      3,
+      6
+    ],
+    "highest_bin_actual_support": true,
+    "named_95pct_frozen_paired_interval": true,
+    "frozen_inputs": 2,
+    "verified_artifacts": 8,
+    "wheel_outside_checkout": true,
+    "isolated_python": true,
+    "site_packages_import": true,
+    "wheel_artifacts_identical": true,
+    "renderer_version": "3.1",
+    "renderer_sha256": "a28b41199841acfefb523ec94145bafa00d2643172f97303f713ad9029b98969",
+    "model_execution": false,
+    "browser_ui": "SKIPPED/DENIED; supervisor owns screen control"
+  },
+  "actual_png_observations": [
+    "calibration endpoint labels separated from lines; actual bin10 support adjacent",
+    "paired interval model names,95pct bootstrap,frozen fits/split,zero retained",
+    "comparison validation selection note"
+  ],
+  "actual_browser_ui": "SKIPPED/DENIED; no CUA/Chrome/browser/server/CDP; supervisor owns screen control",
+  "aesthetic_signoff": "NOT ASSERTED; actual rendered page capture and human judgment remain unverified",
+  "tools": {
+    "skills": [
+      "Auto Model Router",
+      "UI/UX Pro Max reused focused navigation guidance"
+    ],
+    "actual_route": {
+      "task": "independent read-only audit comparison",
+      "model": "gpt-6.1-sol",
+      "effort": "medium",
+      "status": "completed"
+    },
+    "ux_query": "disclosure table navigation / ux / n3",
+    "mcp": "Context7 query_docs /websites/matplotlib_stable Figure.supxlabel + constrained layout"
+  },
+  "environment": {
+    "python": "3.12.10",
+    "matplotlib": "3.11.2",
+    "numpy": "2.5.4",
+    "pillow": "13.0.0",
+    "pytest": "9.2.0",
+    "ruff": "0.17.3"
+  },
+  "ci": {
+    "status": "PENDING publication",
+    "head_sha": null,
+    "url": null
+  }
+}

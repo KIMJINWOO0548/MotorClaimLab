@@ -17,7 +17,7 @@ def _repository(tmp_path):
         "docs/evidence/benchmark/selection.json": b'{"selected_model":"mean"}',
         "src/motorclaimlab/report.py": b"# test renderer\n",
         "src/motorclaimlab/presentation.py": b"# test writer\n",
-        "docs/evidence/presentation-v3/report.html": b"<p>derived fixture</p>\n",
+        "docs/evidence/presentation-v3-1/report.html": b"<p>derived fixture</p>\n",
     }
     for name, content in files.items():
         path = tmp_path / name
@@ -29,7 +29,7 @@ def _repository(tmp_path):
     for name in sorted(sources):
         digest.update(name.encode() + b"\0" + bytes.fromhex(sources[name]))
     manifest = {
-        "renderer_version": "3.0",
+        "renderer_version": "3.1",
         "model_execution": False,
         "renderer_sha256": digest.hexdigest(),
         "renderer_sources": sources,
@@ -40,9 +40,11 @@ def _repository(tmp_path):
             }
             for key in ("results", "selection")
         },
-        "artifacts": {"report.html": hashes["docs/evidence/presentation-v3/report.html"]},
+        "artifacts": {"report.html": hashes["docs/evidence/presentation-v3-1/report.html"]},
     }
-    (tmp_path / "docs/evidence/presentation-v3/presentation.json").write_text(json.dumps(manifest))
+    (tmp_path / "docs/evidence/presentation-v3-1/presentation.json").write_text(
+        json.dumps(manifest)
+    )
     subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
     subprocess.run(["git", "add", "."], cwd=tmp_path, check=True, capture_output=True)
     return tmp_path
@@ -64,7 +66,7 @@ def test_published_presentation_hashes_use_actual_git_blobs(tmp_path):
 @pytest.mark.parametrize(
     "relative",
     [
-        "docs/evidence/presentation-v3/report.html",
+        "docs/evidence/presentation-v3-1/report.html",
         "docs/evidence/benchmark/results.json",
         "src/motorclaimlab/report.py",
     ],
