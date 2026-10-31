@@ -27,4 +27,8 @@ Context7 actually queried Matplotlib [Figure.supxlabel](https://matplotlib.org/s
 
 ## Remaining verification boundary
 
+Published implementation: `6efb433791c012e273ef12a6a6fcb28dfd525b51`, branch `main`. Actual [CI 41228214013](https://github.com/KIMJINWOO0548/MotorClaimLab/actions/runs/41228214013) completed success on Windows Python 3.12 and Linux Python 3.12/3.13, including both Git-blob guards, tests, package build and local-data exclusion. Local final suite: **112 passed**, exit 0. Separate wheel/flow check: exit 0, site-packages import outside checkout, 3 model rows / 10 bins / 4+3+6 segment rows, eight identical derived artifacts and 31 preserved prior files. Renderer digest: `a28b41199841acfefb523ec94145bafa00d2643172f97303f713ad9029b98969`.
+
+Connected GitHub MCP `github_fetch_file` read the newly published manifest at that exact commit; remote blob `263e1765ac20338acc13fa966ee340c894fc39eb` identifies renderer 3.1 and the unchanged original input hashes. One GitHub CLI status read hit a transient Windows socket invalid-pointer connection error; one retry succeeded. No security, network, credential or global setting was changed.
+
 No CUA/Chrome/browser UI operation occurred. Screen control remains assigned to the supervisor, and the earlier file-URL policy denial still forbids server/alternate-surface/raw-CDP workarounds. A real page capture and viewport/keyboard/assistive-technology/print inspection remain needed to assess actual rendered flow and aesthetic quality. They are **SKIPPED/DENIED**, not inferred from a test count, PNG or self-rating. No aesthetic score, external human review or current insurance applicability is asserted.

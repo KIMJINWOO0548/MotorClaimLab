@@ -95,8 +95,39 @@
     "ruff": "0.17.3"
   },
   "ci": {
-    "status": "PENDING publication",
-    "head_sha": null,
-    "url": null
+    "status": "completed",
+    "conclusion": "success",
+    "head_sha": "6efb433791c012e273ef12a6a6fcb28dfd525b51",
+    "url": "https://github.com/KIMJINWOO0548/MotorClaimLab/actions/runs/41228214013",
+    "jobs": [
+      {
+        "name": "offline-tests (windows-latest, 3.12)",
+        "conclusion": "success",
+        "url": "https://github.com/KIMJINWOO0548/MotorClaimLab/actions/runs/41228214013/job/124616729915"
+      },
+      {
+        "name": "offline-tests (ubuntu-latest, 3.12)",
+        "conclusion": "success",
+        "url": "https://github.com/KIMJINWOO0548/MotorClaimLab/actions/runs/41228214013/job/124616730040"
+      },
+      {
+        "name": "offline-tests (ubuntu-latest, 3.13)",
+        "conclusion": "success",
+        "url": "https://github.com/KIMJINWOO0548/MotorClaimLab/actions/runs/41228214013/job/124616730199"
+      }
+    ]
+  },
+  "remote_manifest_check": {
+    "tool": "GitHub MCP github_fetch_file",
+    "ref": "6efb433791c012e273ef12a6a6fcb28dfd525b51",
+    "path": "docs/evidence/presentation-v3-1/presentation.json",
+    "remote_blob_sha": "263e1765ac20338acc13fa966ee340c894fc39eb",
+    "renderer_and_inputs_match": true
+  },
+  "transient_status_read": {
+    "first_exit_code": 1,
+    "failure": "Windows socket invalid pointer connection error",
+    "single_retry_exit_code": 0,
+    "configuration_changed": false
   }
 }
