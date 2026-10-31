@@ -4,7 +4,7 @@
 
 보험 가입 기간이 다른 계약을 공정하게 비교하면서, 단순 평균·포아송 회귀·부스팅 모델의 예측과 집단별 과소·과대예측을 평가합니다. 채용 포트폴리오를 위한 개인 프로젝트이며 KB손해보험 또는 다른 보험사의 의뢰·검증·운영 시스템이 아닙니다.
 
-현재 단계: **설계 완료, 구현 진행 중**. 아직 모델 성능이나 업무 효과를 주장하지 않습니다.
+현재 단계: **분석 패키지·CLI·보고서 구현, 공개 원본 감사 완료**. 전체 자료의 모델 성능 실험과 CI는 진행 중이며 업무 효과를 주장하지 않습니다.
 
 - 설계: [docs/DESIGN.md](docs/DESIGN.md)
 - 구현 계획: [docs/superpowers/plans/2026-11-01-motorclaimlab.md](docs/superpowers/plans/2026-11-01-motorclaimlab.md)
@@ -12,6 +12,42 @@
 - 실제 검증 상태: [docs/STATUS.md](docs/STATUS.md)
 
 Python 3.12를 기본 실행 환경으로 사용합니다. 데이터 원본·계약별 예측·가상환경은 공개 저장소에서 제외합니다. 공개 자료는 집계 결과와 이를 재현하는 코드로 제한합니다.
+
+## 실행
+
+Windows PowerShell, 저장소 루트 기준입니다. 별도 계정·API 키·유료 서비스가 필요하지 않습니다.
+
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --require-hashes -r requirements-dev.lock
+.\.venv\Scripts\python.exe -m pip install --no-deps --no-build-isolation -e .
+.\.venv\Scripts\python.exe -m motorclaimlab fetch --output data/raw
+.\.venv\Scripts\python.exe -m motorclaimlab run --input data/raw/freMTPL2freq.arff --output reports/runs/my-study
+```
+
+`fetch`는 기존 원본을, `run`은 기존 출력 디렉터리를 덮어쓰지 않습니다. 재실행에는 새 출력 경로를 지정하세요. 다운로드는 체크섬을 검증합니다. 모든 모델과 전처리는 학습 자료에만 적합하고 검증 자료로 모델을 선택한 뒤 테스트 자료를 평가합니다.
+
+작은 탐색 실행은 `run`에 `--max-rows 50000 --max-iter 30 --bootstrap-draws 50`을 추가할 수 있습니다. 표본·설정 변경 사실이 결과에 기록되며 전체 고정 프로토콜 실행과 구분됩니다.
+
+새 실행 폴더에는 `results.json`, `report.html`, `report.md`, SVG 차트, 설정 및 선택 기록이 생성됩니다. `predictions.csv`와 `split-membership.csv`는 재현 확인용 로컬 파일이며 공개하지 않습니다.
+
+## 확인된 데이터 범위
+
+OpenML 원본 **678,013행·12열**, 청구 **36,102건**, 노출 합계 **358,499.445년**을 확인했습니다. 1년 초과 노출 1,224행과 4건 초과 청구 9행을 임의로 자르지 않고 보존합니다. SHA-256은 `a45363e056e2ea56408b38eeb9d4d04d7f6c6982eb7a14ed5e807c7c71807cdd`입니다.
+
+고정 seed `20261101`의 정책 ID 해시 분할은 학습 406,061행 / 검증 136,283행 / 테스트 135,669행입니다. 관측 날짜를 대체하는 분할이 아닙니다.
+
+## 검증 명령
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe -m ruff check src tests scripts
+.\.venv\Scripts\python.exe -m ruff format --check src tests scripts
+.\.venv\Scripts\python.exe -m build --no-isolation
+.\.venv\Scripts\python.exe scripts/check_distribution.py
+```
+
+자동 테스트는 직접 작성한 합성 자료로 실행하며 네트워크를 사용하지 않습니다. 실제 공개 자료 실험과 별도입니다. 브라우저 접근은 URL 정책으로 차단되어 실제 브라우저 접근성 검사는 미실행입니다. 다른 서버나 브라우저 경로로 우회하지 않았습니다.
 
 ## 연구 경계
 
