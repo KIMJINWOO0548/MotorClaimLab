@@ -33,3 +33,18 @@ The explicit user request for a bolder, distinctive UI is implemented in a chart
 The supplied v2 PNG/source review was compared against current v3, then only remaining support/context/exploration gaps were addressed. Exact three-model comparison remains visible; standalone interval names models/95%/fixed conditions, calibration support accompanies the curve, and native disclosures expose the 4/3/6 saved segment groups. Final local suite **112 passed**. [AUDIT_CLOSURE_V3_1.md](AUDIT_CLOSURE_V3_1.md) distinguishes resolved items, actual checks and the still unverified browser/aesthetic boundary. New outputs are in `docs/evidence/presentation-v3-1/`; all prior public evidence is preserved. No new model statistics or retraining occurred.
 
 Implementation `6efb433791c012e273ef12a6a6fcb28dfd525b51` passed actual CI `41228214013` on Windows 3.12 and Linux 3.12/3.13. Original/current Git-blob checks passed; 31 prior public evidence files are byte-identical; isolated wheel execution outside checkout produced the same eight artifacts. Browser/page capture and aesthetic acceptance remain SKIPPED/DENIED and are assigned to the supervisor's screen-control workflow.
+
+## Local cloud regression increment
+
+2026-11-01 UTC, branch `improve/experiment-regression-provenance` from
+`fa7ade7c466a8a3f6ba8b6f2c0d2478121a03a8f`: a reproduced late source-hashing
+provenance defect now fails on source/code changes observed at explicit
+checkpoints. Six synthetic regressions strengthen provenance, train-only fitting,
+validation-before-test selection, repeatability and frozen split membership.
+Local Linux/Python 3.12.14 full suite: **118 passed**; lint, format, dependency,
+build/distribution and existing Git-blob evidence/presentation checks passed.
+All 41 existing evidence files are byte-identical; frozen model results and
+presentations were not regenerated. No full-data rerun, remote CI, push or
+deployment occurred. Browser capture remains unrun under the existing denial.
+See [CLOUD_REGRESSION_VALIDATION.md](CLOUD_REGRESSION_VALIDATION.md) for the
+reproduction commands and checkpoint-detection limits.

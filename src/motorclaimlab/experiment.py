@@ -19,7 +19,6 @@ from .data import (
     SOURCE_MD5,
     load_dataset,
     sample_frame,
-    sha256_file,
     split_frame,
     validate_frame,
 )
@@ -49,6 +48,17 @@ def code_fingerprint() -> str:
     for path in sorted(Path(__file__).parent.glob("*.py")):
         digest.update(path.name.encode("utf-8") + b"\0" + path.read_bytes())
     return digest.hexdigest()
+
+
+def _source_fingerprints(path: Path) -> dict[str, str]:
+    """Calculate both source identities from the same stream of local bytes."""
+    sha256 = hashlib.sha256()
+    md5 = hashlib.md5(usedforsecurity=False)
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            sha256.update(block)
+            md5.update(block)
+    return {"source_sha256": sha256.hexdigest(), "source_md5": md5.hexdigest()}
 
 
 def _git_commit() -> str | None:
@@ -88,7 +98,17 @@ def run_experiment(
     _positive_integer(max_iter, "max_iter")
     _positive_integer(bootstrap_draws, "bootstrap_draws")
     started = time.perf_counter()
+    source_fingerprints = _source_fingerprints(input_path)
+    provenance = {
+        **source_fingerprints,
+        "source_matches_pinned": source_fingerprints["source_md5"] == SOURCE_MD5,
+        "code_sha256": code_fingerprint(),
+        "git_commit": _git_commit(),
+        "policy_records_redistributed": False,
+    }
     full = load_dataset(input_path)
+    if _source_fingerprints(input_path) != source_fingerprints:
+        raise ValueError("Source bytes changed while loading; choose an immutable input")
     audit = validate_frame(full)
     records = sample_frame(full, max_rows, seed)
     partitions = split_frame(records, seed)
@@ -119,6 +139,7 @@ def run_experiment(
             "status": "running",
             "started_at": datetime.now(UTC).isoformat(),
             "settings": settings,
+            "provenance": provenance,
         },
     )
     try:
@@ -177,12 +198,16 @@ def run_experiment(
                 seed,
                 bootstrap_draws,
             )
+        # Never label old in-memory records with fingerprints of a newer file.
+        if _source_fingerprints(input_path) != source_fingerprints:
+            raise ValueError("Source bytes changed during experiment; results are incomplete")
+        if code_fingerprint() != provenance["code_sha256"]:
+            raise ValueError("Code bytes changed during experiment; results are incomplete")
         local_predictions = partitions["test"][["IDpol", "ClaimNb", "Exposure"]].copy()
         for name, prediction in test_predictions.items():
             local_predictions[name] = prediction
         local_predictions.to_csv(output_dir / "predictions.csv", index=False)
-        source_md5 = hashlib.md5(input_path.read_bytes(), usedforsecurity=False).hexdigest()
-        pinned = source_md5 == SOURCE_MD5
+        pinned = provenance["source_matches_pinned"]
         results = {
             "study": {
                 "name": "MotorClaimLab",
@@ -201,14 +226,7 @@ def run_experiment(
             "segments": segments,
             "bootstrap": bootstrap,
             "eda": summarize_sql(records),
-            "provenance": {
-                "source_sha256": sha256_file(input_path),
-                "source_md5": source_md5,
-                "source_matches_pinned": pinned,
-                "code_sha256": code_fingerprint(),
-                "git_commit": _git_commit(),
-                "policy_records_redistributed": False,
-            },
+            "provenance": provenance,
             "environment": {
                 "python": platform.python_version(),
                 "platform": platform.system(),
@@ -246,6 +264,7 @@ def run_experiment(
                 "exit_code": 0,
                 "completed_at": datetime.now(UTC).isoformat(),
                 "settings": settings,
+                "provenance": provenance,
             },
         )
         return results
@@ -258,6 +277,7 @@ def run_experiment(
                 "error_type": type(error).__name__,
                 "error": str(error),
                 "settings": settings,
+                "provenance": provenance,
             },
         )
         raise
