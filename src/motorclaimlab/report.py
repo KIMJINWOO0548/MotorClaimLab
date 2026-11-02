@@ -10,6 +10,7 @@ import json
 import math
 import re
 from io import StringIO
+from numbers import Real
 from pathlib import Path
 from typing import Any
 
@@ -17,7 +18,7 @@ from matplotlib.backends.backend_svg import FigureCanvasSVG
 from matplotlib.figure import Figure
 
 _MODELS = ("mean", "poisson_glm", "poisson_hgb")
-RENDERER_VERSION = "3.1"
+RENDERER_VERSION = "3.2"
 _MODEL_LABELS = {
     "mean": "Training mean",
     "poisson_glm": "Poisson GLM",
@@ -55,6 +56,45 @@ def _integer(value: Any) -> str:
 
 def _e(value: Any) -> str:
     return html.escape(str(value), quote=True)
+
+
+def _study_exposure(results: dict) -> float | None:
+    """Pair study rows only with complete, valid saved split-population totals."""
+    study, splits = results.get("study"), results.get("splits")
+    if not isinstance(study, dict) or not isinstance(splits, dict):
+        return None
+    if set(splits) != {"train", "validation", "test"}:
+        return None
+
+    def positive(value):
+        if isinstance(value, bool) or not isinstance(value, Real):
+            raise ValueError("Expected a numeric aggregate")
+        number = float(value)
+        if not math.isfinite(number) or number <= 0:
+            raise ValueError("Expected a positive finite aggregate")
+        return number
+
+    def row_count(value):
+        number = positive(value)
+        if not number.is_integer() or int(number) != value:
+            raise ValueError("Expected an exact integer row count")
+        return int(number)
+
+    try:
+        study_rows = row_count(study.get("rows"))
+        rows, exposures = [], []
+        for name in ("train", "validation", "test"):
+            split = splits[name]
+            if not isinstance(split, dict):
+                return None
+            rows.append(row_count(split.get("rows")))
+            exposures.append(positive(split.get("exposure")))
+        if sum(rows) != study_rows:
+            return None
+        exposure = math.fsum(exposures)
+        return exposure if math.isfinite(exposure) else None
+    except (TypeError, ValueError, OverflowError):
+        return None
 
 
 def _source_description(results: dict) -> str:
@@ -440,6 +480,8 @@ def render_markdown(results: dict) -> str:
         "",
         f"- Selected model: {_e(results.get('selected_model', 'N/A'))} (selected on {_e(study.get('selection_split', 'N/A'))})",
         f"- Rows: {_integer(study.get('rows'))}; data kind: {_e(study.get('data_kind', 'N/A'))}; seed: {_e(study.get('seed', 'N/A'))}",
+        f"- Study exposure: {_number(_study_exposure(results), 2)} years (saved train/validation/test population).",
+        f"- Full-input audit: {_integer(results.get('audit', {}).get('rows'))} rows; exposure {_number(results.get('audit', {}).get('exposure'), 2)} years.",
         f"- Renderer {RENDERER_VERSION}; source values are saved aggregates; no model execution.",
         "",
         "## Validation and test comparison",
@@ -694,7 +736,7 @@ figure {{margin:24px 0;}} figcaption {{color:var(--muted); font-size:.87rem; mar
 <header class="study-hero"><div class="topbar"><div class="wordmark"><span class="lane-mark" aria-hidden="true"><i></i><i></i><i></i></span>MotorClaimLab</div><nav aria-label="보고서 구간"><a href="#selection">모델 비교</a><a href="#uncertainty">불확실성</a><a href="#calibration">보정과 오차</a><a href="#provenance">출처</a></nav></div>
 <div class="hero-frame"><div class="hero-copy"><h1>청구 건수 너머,<br>위험을 읽는 방법.</h1><p>가입 기간이 다른 계약을 어떻게 비교할까요? 노출 기간을 반영한 세 모델의 예측과, 평균 오차 뒤에 남은 과소·과대예측을 살펴봅니다.</p><p>{_e(_source_description(results))} 현재 국내 보험 업무의 적합성 또는 효과를 입증하지 않았습니다.</p><a class="hero-action" href="#selection">세 모델의 결과 비교하기</a></div>
 <figure class="hero-plot">{calibration}<figcaption>예측 순위별 관측(실선·원)과 예측(파선·사각형). 청구 / 노출 연수. 가로축은 시간 흐름이 아닌 예측 순위입니다. <a href="#calibration" style="color:#ff956d">보정 구간의 실제 값 보기</a></figcaption></figure></div>
-<div class="study-context"><span><strong>{_integer(study.get("rows"))}</strong> 계약 행</span><span>노출 <strong>{_number(audit.get("exposure"), 2)}</strong>년</span><span>{"전체 자료 실행" if study.get("sampled") is False else ("표본 실행" if study.get("sampled") is True else "표본 여부 기록 없음")}</span><span>{_e(study.get("data_kind", "기록 없음"))} / seed {_e(study.get("seed", "기록 없음"))}</span></div></header>
+<div class="study-context"><span><strong>{_integer(study.get("rows"))}</strong> 계약 행</span><span>분석 노출 <strong>{_number(_study_exposure(results), 2)}</strong>년</span><span>{"전체 자료 실행" if study.get("sampled") is False else ("표본 실행" if study.get("sampled") is True else "표본 여부 기록 없음")}</span><span>{_e(study.get("data_kind", "기록 없음"))} / seed {_e(study.get("seed", "기록 없음"))}</span></div></header>
 <main id="report-content" tabindex="-1"><section aria-labelledby="selection"><div class="section-intro"><h2 id="selection">어떤 모델이<br>얼마나 덜 틀렸을까?</h2>
 <p>선택 모델: <strong>{_e(_MODEL_LABELS.get(selected, selected))}</strong> (<code>{_e(selected)}</code>). 모델 선택에는 <strong>{_e(study.get("selection_split", "기록 없음"))}</strong> 분할만 사용했습니다. Test results는 선택 이후 평가입니다.</p>
 </div><figure><figcaption>같은 테스트 자료, 같은 노출 가중 기준. 낮은 편차는 이 분할에서 더 작은 예측 오차를 뜻합니다.</figcaption>{comparison}</figure>
@@ -712,6 +754,7 @@ figure {{margin:24px 0;}} figcaption {{color:var(--muted); font-size:.87rem; mar
 {_segment_sections(results)}</section>
 <section aria-labelledby="conditions"><h2 id="conditions">관측 지표와 기록된 조건의 구분</h2>
 <p>위 숫자는 측정값입니다. 아래는 저장된 메타데이터의 조건 기록이며 승인·규제 적합성 점수로 바꾸지 않습니다.</p>
+<p>전체 입력 감사: {_integer(audit.get("rows"))}행 · 노출 {_number(audit.get("exposure"), 2)}년. 표본 실행에서는 위 분석 대상의 행 수·노출 합계와 구분합니다.</p>
 <dl class="condition-list"><dt>입력 식별</dt><dd>{_e(source_state)}. 원본 권리·수집 경위의 독립 검증과는 별개입니다.</dd>
 <dt>유효 관측 처리</dt><dd>{_e(clipping_state)} · 노출 1년 초과 {_integer(audit.get("exposure_gt_one"))}행 · 청구 4건 초과 {_integer(audit.get("claims_gt_four"))}행.</dd></dl>
 <div class="table-wrap" tabindex="0" role="region" aria-label="Area descriptive values"><table><caption>Descriptive Area aggregates</caption><thead><tr><th scope="col">Area</th><th scope="col">Rows</th><th scope="col">노출 연수</th><th scope="col">관측 청구</th></tr></thead><tbody>{area_rows}</tbody></table></div></section>

@@ -48,3 +48,22 @@ presentations were not regenerated. No full-data rerun, remote CI, push or
 deployment occurred. Browser capture remains unrun under the existing denial.
 See [CLOUD_REGRESSION_VALIDATION.md](CLOUD_REGRESSION_VALIDATION.md) for the
 reproduction commands and checkpoint-detection limits.
+
+## Sampled-population context correction
+
+2026-11-02 UTC, local renderer **3.2** on branch
+`improve/sampled-population-context` from `1bfe1faf`: a synthetic 120-row sample
+has 84.75 exposure-years, but the opening previously paired its row count with
+the full-input 200 years. HTML/Markdown now use consistent saved split totals
+and label the full-input audit separately. Invalid or inconsistent population
+metadata displays N/A; model, split, seed, selection and frozen evaluation
+values are unchanged.
+
+Local verification: **143 full tests / 58 affected tests passed**; lint, format,
+dependency, build/distribution, original evidence and pinned historical renderer
+checks passed. Fresh v3.2 source/artifact manifests were verified on synthetic
+aggregates. Existing 41 evidence files, first delivery package and prior branch
+refs are preserved. Historical v3.1 source validation now explicitly pins its
+original renderer commit; default current-source comparison remains strict.
+No remote CI, push retry, new authentication or deployment occurred. See
+[SAMPLED_POPULATION_VALIDATION.md](SAMPLED_POPULATION_VALIDATION.md).

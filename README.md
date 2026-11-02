@@ -67,14 +67,14 @@ OpenML 원본 **678,013행·12열**, 청구 **36,102건**, 노출 합계 **358,4
 .\.venv\Scripts\python.exe -m build --no-isolation
 .\.venv\Scripts\python.exe scripts/check_distribution.py
 .\.venv\Scripts\python.exe scripts/check_evidence.py
-.\.venv\Scripts\python.exe scripts/check_presentation.py
+.\.venv\Scripts\python.exe scripts/check_presentation.py --renderer-ref 6efb433791c012e273ef12a6a6fcb28dfd525b51
 ```
 
 자동 테스트는 직접 작성한 합성 자료로 실행하며 네트워크를 사용하지 않습니다. 실제 공개 자료 실험과 별도입니다. 브라우저 접근은 URL 정책으로 차단되어 실제 브라우저 접근성 검사는 미실행입니다. 다른 서버나 브라우저 경로로 우회하지 않았습니다.
 
 `check_evidence.py`는 Git 체크아웃에서 실행하며 실제 Git blob과 공개 증거의 SHA-256을 대조합니다. 이 검사는 바이트 일치만 확인하며 자료 권리·저자·과학적 타당성을 인증하지 않습니다.
 
-`check_presentation.py`는 현재 v3.1 표현의 동결 입력·renderer 소스·산출물을 별도로 대조합니다. [표현 개선 설계](docs/PRESENTATION_V3.md)와 [읽기 동선의 보완](docs/AUDIT_CLOSURE_V3_1.md)은 기존 실험의 모델 선택·평가와 구분됩니다. 이전 v2·v3는 원래 manifest와 Git 이력으로 보존합니다.
+`check_presentation.py`는 보존된 v3.1 표현의 동결 입력·산출물을 현재 Git blob과, renderer 소스는 명시한 당시 커밋과 대조합니다. `--renderer-ref`를 생략하면 현재 소스를 엄격히 대조하므로 v3.2 소스와 기존 v3.1 manifest의 조합은 실패합니다. 전체 Git 이력이 필요하며 검사기는 자동 fetch를 하지 않습니다. 현재 renderer 3.2의 표본 노출 표시와 별도 manifest 검증은 [SAMPLED_POPULATION_VALIDATION.md](docs/SAMPLED_POPULATION_VALIDATION.md)에 기록합니다. [표현 개선 설계](docs/PRESENTATION_V3.md)와 [읽기 동선의 보완](docs/AUDIT_CLOSURE_V3_1.md)은 기존 실험의 모델 선택·평가와 구분됩니다. 이전 v2·v3·v3.1 산출물과 manifest는 보존합니다.
 
 ## 연구 경계
 
