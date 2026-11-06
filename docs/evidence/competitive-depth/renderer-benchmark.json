@@ -1,0 +1,137 @@
+{
+  "scope": "Local saved-aggregate HTML/Markdown rendering only; no fitting, external benchmark or causal speedup claim",
+  "before_commit": "16516192d57af752034892d2fe898f10a86f6c99",
+  "measurement_script_sha256": "f0baef86905f85a0361ee4d05159b7b5792cda7d3fd8b099426ff51a6c1ce303",
+  "measurements": {
+    "before": {
+      "scope": "same saved aggregates, HTML+Markdown render only; fresh process per repetition",
+      "python": "3.12.10",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "model_execution": false,
+      "median_render_seconds": 0.29180980002274737,
+      "median_peak_rss_bytes": 66035712,
+      "records": [
+        {
+          "renderer_version": "3.3",
+          "renderer_source_sha256": "2bcc4aecc45de04f2afbf6cb79069115a60673f388b99d35cd2d7d48cb0b9764",
+          "input_sha256": "3585e11b57460165521a43db7b21d26dd11330c47affcec820c450c0781e1a74",
+          "render_seconds": 0.26586739998310804,
+          "peak_rss_bytes": 66035712,
+          "html_bytes": 60563,
+          "markdown_bytes": 6521,
+          "html_sha256": "65aefb641bfe3d4ef4bfa282baa79e1137afbff5d44579651c54982ccd452b5f",
+          "markdown_sha256": "e4f53153fd5b0ea1e3533b62f1d492b7944d307ed342e7f443f5e0d127e5e4a1"
+        },
+        {
+          "renderer_version": "3.3",
+          "renderer_source_sha256": "2bcc4aecc45de04f2afbf6cb79069115a60673f388b99d35cd2d7d48cb0b9764",
+          "input_sha256": "3585e11b57460165521a43db7b21d26dd11330c47affcec820c450c0781e1a74",
+          "render_seconds": 0.3214498999877833,
+          "peak_rss_bytes": 65896448,
+          "html_bytes": 60563,
+          "markdown_bytes": 6521,
+          "html_sha256": "65aefb641bfe3d4ef4bfa282baa79e1137afbff5d44579651c54982ccd452b5f",
+          "markdown_sha256": "e4f53153fd5b0ea1e3533b62f1d492b7944d307ed342e7f443f5e0d127e5e4a1"
+        },
+        {
+          "renderer_version": "3.3",
+          "renderer_source_sha256": "2bcc4aecc45de04f2afbf6cb79069115a60673f388b99d35cd2d7d48cb0b9764",
+          "input_sha256": "3585e11b57460165521a43db7b21d26dd11330c47affcec820c450c0781e1a74",
+          "render_seconds": 0.29180980002274737,
+          "peak_rss_bytes": 66048000,
+          "html_bytes": 60563,
+          "markdown_bytes": 6521,
+          "html_sha256": "65aefb641bfe3d4ef4bfa282baa79e1137afbff5d44579651c54982ccd452b5f",
+          "markdown_sha256": "e4f53153fd5b0ea1e3533b62f1d492b7944d307ed342e7f443f5e0d127e5e4a1"
+        }
+      ]
+    },
+    "intermediate_after": {
+      "scope": "same saved aggregates, HTML+Markdown render only; fresh process per repetition",
+      "python": "3.12.10",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "model_execution": false,
+      "median_render_seconds": 0.246705400000792,
+      "median_peak_rss_bytes": 66396160,
+      "records": [
+        {
+          "renderer_version": "3.4",
+          "renderer_source_sha256": "622e4dc17496f4e3ec7df28f5f01382b9888f2b436730366bbdf71687d90c34f",
+          "input_sha256": "3585e11b57460165521a43db7b21d26dd11330c47affcec820c450c0781e1a74",
+          "render_seconds": 0.29321279999567196,
+          "peak_rss_bytes": 66396160,
+          "html_bytes": 64448,
+          "markdown_bytes": 8088,
+          "html_sha256": "58a2f5f71fc64d6db17ba56f0b3ecb0f349f1ae603c6805a39ebd12f0aecd236",
+          "markdown_sha256": "cc36a40c7c07c58ec3bbdad5edfafbf924605d38ed82d00a1b0f86cc3ea424e6"
+        },
+        {
+          "renderer_version": "3.4",
+          "renderer_source_sha256": "622e4dc17496f4e3ec7df28f5f01382b9888f2b436730366bbdf71687d90c34f",
+          "input_sha256": "3585e11b57460165521a43db7b21d26dd11330c47affcec820c450c0781e1a74",
+          "render_seconds": 0.23732090002158657,
+          "peak_rss_bytes": 66396160,
+          "html_bytes": 64448,
+          "markdown_bytes": 8088,
+          "html_sha256": "58a2f5f71fc64d6db17ba56f0b3ecb0f349f1ae603c6805a39ebd12f0aecd236",
+          "markdown_sha256": "cc36a40c7c07c58ec3bbdad5edfafbf924605d38ed82d00a1b0f86cc3ea424e6"
+        },
+        {
+          "renderer_version": "3.4",
+          "renderer_source_sha256": "622e4dc17496f4e3ec7df28f5f01382b9888f2b436730366bbdf71687d90c34f",
+          "input_sha256": "3585e11b57460165521a43db7b21d26dd11330c47affcec820c450c0781e1a74",
+          "render_seconds": 0.246705400000792,
+          "peak_rss_bytes": 65867776,
+          "html_bytes": 64448,
+          "markdown_bytes": 8088,
+          "html_sha256": "58a2f5f71fc64d6db17ba56f0b3ecb0f349f1ae603c6805a39ebd12f0aecd236",
+          "markdown_sha256": "cc36a40c7c07c58ec3bbdad5edfafbf924605d38ed82d00a1b0f86cc3ea424e6"
+        }
+      ]
+    },
+    "final_after": {
+      "scope": "same saved aggregates, HTML+Markdown render only; fresh process per repetition",
+      "python": "3.12.10",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "model_execution": false,
+      "median_render_seconds": 0.20997690001968294,
+      "median_peak_rss_bytes": 66195456,
+      "records": [
+        {
+          "renderer_version": "3.4",
+          "renderer_source_sha256": "d22c7fa840384ff7805370a35a4f276f5fe4498df1b40462809c3794343b9a0a",
+          "input_sha256": "3585e11b57460165521a43db7b21d26dd11330c47affcec820c450c0781e1a74",
+          "render_seconds": 0.21232219994999468,
+          "peak_rss_bytes": 66195456,
+          "html_bytes": 64448,
+          "markdown_bytes": 8088,
+          "html_sha256": "58a2f5f71fc64d6db17ba56f0b3ecb0f349f1ae603c6805a39ebd12f0aecd236",
+          "markdown_sha256": "cc36a40c7c07c58ec3bbdad5edfafbf924605d38ed82d00a1b0f86cc3ea424e6"
+        },
+        {
+          "renderer_version": "3.4",
+          "renderer_source_sha256": "d22c7fa840384ff7805370a35a4f276f5fe4498df1b40462809c3794343b9a0a",
+          "input_sha256": "3585e11b57460165521a43db7b21d26dd11330c47affcec820c450c0781e1a74",
+          "render_seconds": 0.20670390001032501,
+          "peak_rss_bytes": 66347008,
+          "html_bytes": 64448,
+          "markdown_bytes": 8088,
+          "html_sha256": "58a2f5f71fc64d6db17ba56f0b3ecb0f349f1ae603c6805a39ebd12f0aecd236",
+          "markdown_sha256": "cc36a40c7c07c58ec3bbdad5edfafbf924605d38ed82d00a1b0f86cc3ea424e6"
+        },
+        {
+          "renderer_version": "3.4",
+          "renderer_source_sha256": "d22c7fa840384ff7805370a35a4f276f5fe4498df1b40462809c3794343b9a0a",
+          "input_sha256": "3585e11b57460165521a43db7b21d26dd11330c47affcec820c450c0781e1a74",
+          "render_seconds": 0.20997690001968294,
+          "peak_rss_bytes": 65941504,
+          "html_bytes": 64448,
+          "markdown_bytes": 8088,
+          "html_sha256": "58a2f5f71fc64d6db17ba56f0b3ecb0f349f1ae603c6805a39ebd12f0aecd236",
+          "markdown_sha256": "cc36a40c7c07c58ec3bbdad5edfafbf924605d38ed82d00a1b0f86cc3ea424e6"
+        }
+      ]
+    }
+  },
+  "interpretation": "Three sequential fresh processes per revision. Later filesystem/font-cache/scheduler conditions are uncontrolled; earlier intermediate timing range overlaps baseline. Compare output richness/size, not model or competitor performance."
+}

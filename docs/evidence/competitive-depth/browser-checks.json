@@ -1,0 +1,31 @@
+{
+  "scope": "Actual coordinator-host Chrome/Playwright run of the published saved-aggregate report; JavaScript disabled; no competitor performance claim",
+  "actual_result": {
+    "checks": [
+      {
+        "name": "no-JavaScript native links and keyboard disclosure",
+        "pass": true
+      },
+      {
+        "name": "390px viewport; tables retain separate scroll regions",
+        "pass": true
+      },
+      {
+        "name": "print PDF produced; pagination requires visual review",
+        "pass": true
+      }
+    ],
+    "javascript_enabled": false,
+    "remote_requests": [],
+    "report_sha256": "58a2f5f71fc64d6db17ba56f0b3ecb0f349f1ae603c6805a39ebd12f0aecd236",
+    "scope": "saved aggregates; no model execution or external product benchmark"
+  },
+  "screenshots": {
+    "desktop-review.png": "edfdd7e07e9b0369f4260f6241f2416d58e4acfe41b08b94dc250ad32e4c9200",
+    "mobile-review.png": "3105a9b2dde6097b19b8107c63198f21d2a4e46942c6c0d6c954c8a25c161704"
+  },
+  "print_pdf_sha256": "39623096c15b356ba6aff9a307cbc19a06424777324c6a9792e8fa89ef47e8b4",
+  "print_review": "PDF generation succeeded; pagination not visually verified",
+  "visual_review": "Desktop and 390px cropped review screenshots inspected; no clipping/overlap observed in new review block",
+  "source_script_sha256": "80206611dac78b85b5583a1ab1782ed826e6e3b17a9f8da58c62500294ec13a8"
+}

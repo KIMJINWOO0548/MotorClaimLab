@@ -95,7 +95,9 @@ def render_saved(results_path: Path, output_dir: Path, selection_path: Path | No
             for path in sorted(output_dir.rglob("*"))
             if path.is_file()
         },
-        "browser_validation": "SKIPPED/DENIED; offline HTML/SVG and Matplotlib outputs only",
+        "browser_validation": (
+            "NOT_RUN at generation; browser verification is recorded separately"
+        ),
     }
     (output_dir / "presentation.json").write_bytes(
         (json.dumps(manifest, ensure_ascii=False, indent=2, allow_nan=False) + "\n").encode("utf-8")

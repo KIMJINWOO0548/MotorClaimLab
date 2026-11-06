@@ -1,0 +1,89 @@
+{
+  "feature_score": 67.6,
+  "counted": 7,
+  "must_have_done": 3,
+  "must_have_total": 4,
+  "by_area": [
+    {
+      "area": "operations",
+      "score": 0.0,
+      "features": 2
+    },
+    {
+      "area": "comparison",
+      "score": 50.0,
+      "features": 1
+    },
+    {
+      "area": "investigation",
+      "score": 80.0,
+      "features": 2
+    },
+    {
+      "area": "report",
+      "score": 100.0,
+      "features": 1
+    },
+    {
+      "area": "interpretation",
+      "score": 100.0,
+      "features": 1
+    }
+  ],
+  "missing": [
+    {
+      "feature": "Compare reference and current data",
+      "area": "comparison",
+      "priority": "must",
+      "clone": "partial",
+      "notes": "Frozen validation/test model comparison; no temporal drift comparison"
+    },
+    {
+      "feature": "Operate recurring production monitoring",
+      "area": "operations",
+      "priority": "should",
+      "clone": "no",
+      "notes": "Research offline renderer only"
+    },
+    {
+      "feature": "Inspect row-level error distribution",
+      "area": "investigation",
+      "priority": "should",
+      "clone": "partial",
+      "notes": "Only saved aggregate group count differences; no raw/policy rows"
+    },
+    {
+      "feature": "Ingest current live evaluation data",
+      "area": "operations",
+      "priority": "could",
+      "clone": "no",
+      "notes": "No service or live inference integration"
+    }
+  ],
+  "skipped": [],
+  "extras": [
+    {
+      "feature": "Reconcile partition totals before displaying derived support",
+      "area": "integrity",
+      "priority": "must",
+      "clone": "yes",
+      "notes": "Own fail-closed addition; numeric consistency not proof of membership"
+    },
+    {
+      "feature": "Show net and absolute count cancellation separately",
+      "area": "interpretation",
+      "priority": "must",
+      "clone": "yes",
+      "notes": "Own addition; never sum overlapping dimensions"
+    },
+    {
+      "feature": "Keep train-only selection and frozen test provenance",
+      "area": "integrity",
+      "priority": "must",
+      "clone": "yes",
+      "notes": "Existing research contract preserved"
+    }
+  ],
+  "problems": [],
+  "overall": 67.6
+}

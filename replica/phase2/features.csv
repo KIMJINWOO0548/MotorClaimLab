@@ -1,0 +1,11 @@
+feature,area,priority,original,clone,notes
+Compare actual and predicted outputs,report,must,yes,yes,Saved calibration plots/count tables; not new model performance
+Show support beside errors,interpretation,must,yes,yes,Rows exposure Sparse and saved-test denominator context
+Explore underperforming segments,investigation,must,yes,yes,Own partition review links largest under/over counts and complete saved tables
+Inspect row-level error distribution,investigation,should,yes,partial,Only saved aggregate group count differences; no raw/policy rows
+Compare reference and current data,comparison,must,yes,partial,Frozen validation/test model comparison; no temporal drift comparison
+Operate recurring production monitoring,operations,should,yes,no,Research offline renderer only
+Ingest current live evaluation data,operations,could,yes,no,No service or live inference integration
+Reconcile partition totals before displaying derived support,integrity,must,no,yes,Own fail-closed addition; numeric consistency not proof of membership
+Show net and absolute count cancellation separately,interpretation,must,no,yes,Own addition; never sum overlapping dimensions
+Keep train-only selection and frozen test provenance,integrity,must,no,yes,Existing research contract preserved

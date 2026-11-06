@@ -18,7 +18,7 @@ from matplotlib.backends.backend_svg import FigureCanvasSVG
 from matplotlib.figure import Figure
 
 _MODELS = ("mean", "poisson_glm", "poisson_hgb")
-RENDERER_VERSION = "3.3"
+RENDERER_VERSION = "3.4"
 _MODEL_LABELS = {
     "mean": "Training mean",
     "poisson_glm": "Poisson GLM",
@@ -126,6 +126,144 @@ def _prediction_direction(metric: dict) -> str:
     if difference < 0:
         return f"과대예측 · {_number(difference, 2)}"
     return "일치 · 0.00"
+
+
+def segment_review(results: dict) -> list[dict]:
+    """Review each saved partition independently; totals do not prove membership.
+
+    Fail closed for incomplete/invalid support, duplicate group names or totals
+    inconsistent with the selected model's saved test metrics. No thresholds,
+    selection changes, causal interpretation or cross-dimension summation.
+    """
+    dimensions: dict[str, list[dict]] = {}
+    for row in results.get("segments", []):
+        dimensions.setdefault(str(row.get("segment", "기록 없음")), []).append(row)
+    target = results.get("metrics", {}).get("test", {}).get(results.get("selected_model"), {})
+    fields = ("rows", "exposure", "observed_claims", "predicted_claims")
+
+    def valid(metric: dict) -> bool:
+        for key in fields:
+            value = metric.get(key)
+            if isinstance(value, bool) or not isinstance(value, Real):
+                return False
+            try:
+                if not math.isfinite(value):
+                    return False
+            except OverflowError:
+                return False
+            if value < 0 or (key in ("rows", "exposure") and value <= 0):
+                return False
+            if key == "rows" and int(value) != value:
+                return False
+        return True
+
+    reviews = []
+    for name, rows in dimensions.items():
+        review = {
+            "dimension": name,
+            "groups": len(rows),
+            "reconciled": False,
+            "rows": None,
+            "exposure": None,
+            "net_gap": None,
+            "absolute_gap": None,
+            "under": None,
+            "over": None,
+        }
+        labels = [row.get("group") for row in rows]
+        if (
+            not valid(target)
+            or not all(valid(row) for row in rows)
+            or not all(isinstance(label, str) and label for label in labels)
+            or len(set(labels)) != len(labels)
+        ):
+            reviews.append(review)
+            continue
+        try:
+            totals = {key: math.fsum(row[key] for row in rows) for key in fields[1:]}
+            totals["rows"] = sum(int(row["rows"]) for row in rows)
+            reconciled = totals["rows"] == target["rows"] and all(
+                math.isclose(totals[key], target[key], rel_tol=1e-9, abs_tol=1e-9)
+                for key in fields[1:]
+            )
+            gaps = [row["observed_claims"] - row["predicted_claims"] for row in rows]
+            absolute = math.fsum(abs(gap) for gap in gaps)
+            net = math.fsum(gaps)
+            if not reconciled or not all(
+                math.isfinite(value) for value in (*totals.values(), absolute, net)
+            ):
+                reviews.append(review)
+                continue
+        except (OverflowError, ValueError):
+            reviews.append(review)
+            continue
+
+        def finding(row: dict, gap: float) -> dict:
+            return {
+                "group": row["group"],
+                "gap": gap,
+                "rows": row["rows"],
+                "exposure": row["exposure"],
+                "exposure_share": row["exposure"] / target["exposure"],
+                "sparse": row.get("sparse") is True,
+            }
+
+        # max/min retain saved order for exact ties; there is no inferred significance.
+        under = max(range(len(rows)), key=lambda index: gaps[index])
+        over = min(range(len(rows)), key=lambda index: gaps[index])
+        review.update(
+            reconciled=True,
+            rows=target["rows"],
+            exposure=target["exposure"],
+            net_gap=net,
+            absolute_gap=absolute,
+            under=finding(rows[under], gaps[under]) if gaps[under] > 0 else None,
+            over=finding(rows[over], gaps[over]) if gaps[over] < 0 else None,
+        )
+        reviews.append(review)
+    return reviews
+
+
+def _finding_text(finding: dict | None) -> str:
+    if finding is None:
+        return "해당 방향 차이 없음"
+    return (
+        f"{finding['group']} · {finding['gap']:+,.2f}건 · {_integer(finding['rows'])} rows · "
+        f"{_number(finding['exposure'], 2)} exposure-years ({finding['exposure_share']:.1%})"
+        + (" · Sparse" if finding["sparse"] else "")
+    )
+
+
+def _segment_review_html(results: dict) -> str:
+    rows = []
+    for index, review in enumerate(segment_review(results)):
+        label = _SEGMENT_LABELS.get(review["dimension"], review["dimension"])
+        heading = (
+            f'<h4><a href="#segment-dimension-{index}">{_e(label)} · '
+            f"{review['groups']}개 집단 상세 표로 이동</a></h4>"
+        )
+        if not review["reconciled"]:
+            body = '<p class="review-unavailable">저장 합계 확인 불가 · N/A. 행·노출·관측/예측 합계 또는 집단 이름을 확인하세요. 합산 차이·노출 비중·최대 차이는 계산하지 않습니다.</p>'
+        else:
+            body = (
+                f'<p class="review-support">저장 합계 일치 · {_integer(review["rows"])} test rows · '
+                f"{_number(review['exposure'], 2)} exposure-years</p>"
+                '<dl class="review-gap"><div><dt>순 차이 · Net group gap</dt>'
+                f"<dd>{review['net_gap']:+,.2f}건</dd></div><div><dt>집단별 절대 차이 합 · Absolute group gap</dt>"
+                f"<dd>{review['absolute_gap']:,.2f}건</dd></div></dl>"
+                f"<p><strong>가장 큰 과소예측</strong> {_e(_finding_text(review['under']))}</p>"
+                f"<p><strong>가장 큰 과대예측</strong> {_e(_finding_text(review['over']))}</p>"
+            )
+        rows.append(f'<article class="segment-review-row">{heading}{body}</article>')
+    return (
+        '<div id="segment-review" class="segment-review"><h3>합계에 가려진 집단 차이 조사</h3>'
+        "<p>각 차원 안에서 관측 − 예측의 순 차이와 절대 차이 합을 함께 보세요. 순 차이가 작아도 반대 방향 차이가 상쇄될 수 있습니다. "
+        "최대 차이는 건수 기준의 탐색 순서이며 위험·공정성·유의성 순위가 아닙니다. 동률은 저장 순서를 따릅니다.</p>"
+        '<p class="muted">노출 비중의 분모는 선택 모델의 저장된 test 노출 합계입니다. 행·노출·관측/예측 건수를 각각 대조합니다. '
+        "합계 일치는 원자료의 중복·누락 검증이 아닙니다. 차원 간 집단은 겹치므로 합산하지 마세요. Sparse는 기존 저장 표시를 유지합니다.</p>"
+        + ("".join(rows) if rows else '<p class="review-unavailable">저장된 집단 없음 · N/A</p>')
+        + "</div>"
+    )
 
 
 def _metric_table(rows: list[tuple[str, dict]], caption: str, *, direction: bool = False) -> str:
@@ -553,6 +691,33 @@ def render_markdown(results: dict) -> str:
             "|---|---:|---:|---:|---:|---|",
         ]
     )
+    review_lines = [
+        "### Segment review — saved test aggregates",
+        "",
+        "Net group gap sums observed minus predicted within one dimension; Absolute group gap sums absolute differences. Opposing errors can cancel.",
+        "Exposure shares use the selected model's saved test exposure. Rows, exposure and observed/predicted totals are checked separately. Matching totals do not prove disjoint/full row membership. Do not add overlapping dimensions. Largest differences are descriptive counts, not risk, significance or fairness ranks; exact ties retain saved order.",
+        "",
+    ]
+    for review in segment_review(results):
+        dimension = _e(review["dimension"]).replace("|", "&#124;").replace("\n", " ")
+        review_lines.append(f"- **{dimension}** ({review['groups']} groups)")
+        if not review["reconciled"]:
+            review_lines.append(
+                "  Saved totals unavailable/inconsistent — N/A; combined gaps, shares and largest differences suppressed."
+            )
+            continue
+        review_lines.extend(
+            [
+                f"  Saved totals consistent: {_integer(review['rows'])} test rows; {_number(review['exposure'], 2)} exposure-years.",
+                f"  Net group gap: {review['net_gap']:+,.2f}; Absolute group gap: {review['absolute_gap']:,.2f} claims.",
+                "  Largest underprediction: "
+                + _e(_finding_text(review["under"])).replace("|", "&#124;").replace("\n", " "),
+                "  Largest overprediction: "
+                + _e(_finding_text(review["over"])).replace("|", "&#124;").replace("\n", " "),
+            ]
+        )
+    # Insert the investigation before, rather than inside, the original Markdown table.
+    lines[-2:-2] = review_lines + [""]
     for row in results.get("segments", []):
         label = f"{row.get('segment', '')}: {row.get('group', '')}"
         if row.get("sparse"):
@@ -661,7 +826,7 @@ def _segment_sections(results: dict) -> str:
         name = str(row.get("segment", "기록 없음"))
         dimensions.setdefault(name, []).append((str(row.get("group", "기록 없음")), row))
     return "".join(
-        '<details class="segment-dimension" open><summary>'
+        f'<details class="segment-dimension" open id="segment-dimension-{index}"><summary>'
         + f"{_e(_SEGMENT_LABELS.get(name, name))} · {len(rows)}개 기존 집단</summary>"
         + _metric_table(
             rows,
@@ -669,7 +834,7 @@ def _segment_sections(results: dict) -> str:
             direction=True,
         )
         + "</details>"
-        for name, rows in dimensions.items()
+        for index, (name, rows) in enumerate(dimensions.items())
     )
 
 
@@ -758,6 +923,8 @@ figure {{margin:24px 0;}} figcaption {{color:var(--muted); font-size:.87rem; mar
 #limits {{border-top:3px solid var(--ink);}} li {{margin:10px 0; max-width:85ch;}} footer {{font-size:.8rem; padding-top:28px;}}
 @media (max-width:900px) {{.hero-frame {{grid-template-columns:1fr; gap:30px; padding-top:40px;}} .hero-copy>p {{max-width:62ch;}} .hero-plot {{max-width:800px;}} .analysis-pair,.section-intro {{grid-template-columns:1fr; gap:20px;}} .topbar {{align-items:flex-start; flex-direction:column; gap:4px; padding:20px 0 10px;}} h1 {{font-size:clamp(2.3rem,7vw,4rem);}}}}
 @media (max-width:520px) {{.study-hero {{padding:0 18px;}} .wordmark {{font-size:22px;}} nav {{gap:2px 17px; font-size:.8rem;}} .hero-frame {{padding:32px 0; gap:24px;}} .hero-plot figcaption {{padding-left:0;}} .study-context {{gap:8px 18px; font-size:.78rem;}} main {{padding:0 18px 32px;}} section {{padding:34px 0;}} .analysis-pair {{padding:12px; gap:12px;}} .condition-list {{grid-template-columns:1fr; gap:6px;}} .condition-list dd {{margin-bottom:14px;}}}}
+.segment-review {{margin:32px 0; padding:24px 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line);}} .segment-review>h3 {{margin-top:0;}} .segment-review>p {{font-size:.91rem;}} .segment-review-row {{padding:22px 0; border-top:1px solid var(--line);}} .segment-review-row h4 {{margin:0 0 8px; font-size:1rem;}} .segment-review-row p {{font-size:.88rem; margin:8px 0; overflow-wrap:anywhere;}} .review-support {{color:var(--muted);}} .review-gap {{display:grid; grid-template-columns:1fr 1fr; gap:20px; margin:16px 0; font-variant-numeric:tabular-nums;}} .review-gap dt {{font-size:.82rem; color:var(--muted);}} .review-gap dd {{margin:5px 0 0; font-size:1.35rem; font-weight:700;}} .review-unavailable {{color:#684f25;}} .segment-review a:focus-visible {{outline:3px solid var(--accent); outline-offset:5px;}} .segment-dimension:target>summary {{background:#e8edf8; outline:2px solid var(--accent); outline-offset:4px;}} .segment-review ::selection {{background:#ced8fa; color:var(--ink);}}
+@media (max-width:520px) {{.review-gap {{grid-template-columns:1fr; gap:14px;}} .segment-review {{padding:18px 0;}}}}
 @media (prefers-reduced-motion:reduce) {{*,*::before,*::after {{animation:none!important; transition:none!important; scroll-behavior:auto!important;}}}}
 @media print {{body {{background:white; font-size:10pt;}} .skip-link,nav,.hero-action {{display:none;}} .study-hero {{print-color-adjust:exact; -webkit-print-color-adjust:exact;}} .hero-frame {{grid-template-columns:1fr 1fr; padding:24px 0;}} h1 {{font-size:25pt;}} main {{padding:0;}} .analysis-pair,.section-intro {{display:block;}} section {{padding:20px 0;}} .table-wrap {{overflow:visible; border:0;}} table {{min-width:0; font-size:8pt;}} th,td {{padding:5px; white-space:normal;}} details>pre {{display:block;}} figure,tr {{break-inside:avoid;}}}}
 </style></head><body><a class="skip-link" href="#report-content">분석 본문으로 건너뛰기</a>
@@ -780,6 +947,7 @@ figure {{margin:24px 0;}} figcaption {{color:var(--muted); font-size:.87rem; mar
 <h3>차원별 집단 오차 탐색</h3><p>아래 펼침 항목에서 운전자 연령·차량 연령·지역을 비교하세요. 각 표는 선택 모델 <strong>{_e(_MODEL_LABELS.get(selected, selected))}</strong>의 저장된 집단만 보여줍니다. 행 수·노출량·관측/예측 청구를 함께 읽으며, 교차 집단·다른 모델의 집단별 결과·인과 설명을 뜻하지 않습니다.</p>
 <p>관측/예측 비율이 1보다 크면 이 집단에서 과소예측, 1보다 작으면 과대예측입니다. 비율이 없으면 N/A로 표시합니다. Sparse는 행 수 50개 미만 또는 노출 합계 10년 미만을 뜻합니다. 각 행의 표시는 유지하며, 해당 구간의 불확실성에 주의합니다.</p>
 <p>청구 건수의 기술적 차이: 관측 − 예측이 양수면 과소예측, 음수면 과대예측입니다. 인과 설명·보험금 판단·유의성 판정이 아닙니다. 표시된 두 자리에서 같아 보여도 차이의 부호는 저장된 원래 값에서 계산합니다.</p>
+{_segment_review_html(results)}
 {_segment_sections(results)}</section>
 <section aria-labelledby="conditions"><h2 id="conditions">관측 지표와 기록된 조건의 구분</h2>
 <p>위 숫자는 측정값입니다. 아래는 저장된 메타데이터의 조건 기록이며 승인·규제 적합성 점수로 바꾸지 않습니다.</p>

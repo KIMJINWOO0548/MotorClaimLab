@@ -1,0 +1,15 @@
+{
+  "tool": "Local Replica recon/design/diff pack",
+  "coordinator_previously_verified_commit": "77c9436fb3d18c3d58169efb8caf4fe906b0dc51",
+  "leaf_git_metadata_recheck": "Permission denied (exit128); no retry; this does not block completed parity/contrast execution",
+  "executed_commands": [
+    "python <existing-Replica>/replica-diff/parity.py replica/phase2/features.csv --json",
+    "python <existing-Replica>/replica-design/contrast.py replica/phase2/tokens.json --json"
+  ],
+  "output_sha256": {
+    "parity.json": "c19468745a9042782532b5023d2bde57d899b4a6241e8a1acaeb2da2172c9bb4",
+    "contrast.json": "d63948e923bdeae05ea2c48176c1a161c17200b019bf107cdb8a114bbdf617fd"
+  },
+  "scope": "Self-selected workflow checklist and selected-role contrast only; no whole-product score, release verdict or superiority claim",
+  "installation": false
+}
