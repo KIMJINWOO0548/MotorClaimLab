@@ -125,7 +125,7 @@ def test_new_renderer_manifest_tracks_current_source_and_outputs_on_fresh_saved_
     original = {path: path.read_bytes() for path in (source, selection)}
     output = tmp_path / "renderer-3-2"
     manifest = render_saved(source, output, selection)
-    assert manifest["renderer_version"] == "3.2" and manifest["model_execution"] is False
+    assert manifest["renderer_version"] == "3.3" and manifest["model_execution"] is False
     root = Path(__file__).resolve().parents[1]
     for name, expected in manifest["renderer_sources"].items():
         assert hashlib.sha256((root / name).read_bytes()).hexdigest() == expected

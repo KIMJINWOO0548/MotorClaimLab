@@ -1,5 +1,9 @@
 # Status
 
+## Renderer 3.3 descriptive error direction — 2026-11-06 UTC
+
+HTML and Markdown segment tables now display signed observed-minus-predicted claim totals and textual direction with the existing support/Sparse context. This is a descriptive rendering of saved aggregates, without refitting or threshold selection. Full suite **152 passed**, new RED→GREEN cases **9**, Ruff lint/format passed. REA captured the public Evidently regression documentation and Replica's scoped matrix was actually executed. See [commands and limitations](REFERENCE_TRANSFER_20261106.md). Existing 41 published evidence files remain unchanged; local browser verification remains unrun under the prior denial. Commit/push/remote CI are pending coordinator finalization.
+
 2026-11-01 KST.
 
 | Item | State | Evidence |

@@ -1,0 +1,41 @@
+{
+  "feature_score": 100.0,
+  "counted": 1,
+  "must_have_done": 1,
+  "must_have_total": 1,
+  "by_area": [
+    {
+      "area": "segment report",
+      "score": 100.0,
+      "features": 1
+    }
+  ],
+  "missing": [],
+  "skipped": [
+    {
+      "feature": "Hosted model monitoring and automatic performance thresholds",
+      "area": "monitoring",
+      "priority": "could",
+      "clone": "skip",
+      "notes": "Outside offline historical research scope"
+    }
+  ],
+  "extras": [
+    {
+      "feature": "Show signed descriptive difference with under and overprediction labels",
+      "area": "segment report",
+      "priority": "must",
+      "clone": "yes",
+      "notes": "Independent adaptation tested on saved aggregates; no significance or claims decision"
+    },
+    {
+      "feature": "Keep incomplete aggregate direction unavailable",
+      "area": "segment report",
+      "priority": "must",
+      "clone": "yes",
+      "notes": "Strict numeric finite nonnegative inputs; missing invalid values stay N/A"
+    }
+  ],
+  "problems": [],
+  "overall": 100.0
+}

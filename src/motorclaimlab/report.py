@@ -18,7 +18,7 @@ from matplotlib.backends.backend_svg import FigureCanvasSVG
 from matplotlib.figure import Figure
 
 _MODELS = ("mean", "poisson_glm", "poisson_hgb")
-RENDERER_VERSION = "3.2"
+RENDERER_VERSION = "3.3"
 _MODEL_LABELS = {
     "mean": "Training mean",
     "poisson_glm": "Poisson GLM",
@@ -107,7 +107,28 @@ def _source_description(results: dict) -> str:
     return "로컬 입력 자료에 대한 실험입니다. 자료의 출처와 실제·합성 여부는 확인하지 않았습니다."
 
 
-def _metric_table(rows: list[tuple[str, dict]], caption: str) -> str:
+def _prediction_direction(metric: dict) -> str:
+    """Describe saved aggregate count differences without imposing a decision threshold."""
+    counts = [metric.get("observed_claims"), metric.get("predicted_claims")]
+    if any(
+        isinstance(value, bool)
+        or not isinstance(value, Real)
+        or not math.isfinite(value)
+        or value < 0
+        for value in counts
+    ):
+        return "판정 불가 · N/A"
+    difference = counts[0] - counts[1]
+    if not math.isfinite(difference):
+        return "판정 불가 · N/A"
+    if difference > 0:
+        return f"과소예측 · +{_number(difference, 2)}"
+    if difference < 0:
+        return f"과대예측 · {_number(difference, 2)}"
+    return "일치 · 0.00"
+
+
+def _metric_table(rows: list[tuple[str, dict]], caption: str, *, direction: bool = False) -> str:
     body = "".join(
         "<tr>"
         + f"<th scope='row'>{_e(label + (' · Sparse' if metric.get('sparse') else ''))}</th>"
@@ -117,7 +138,9 @@ def _metric_table(rows: list[tuple[str, dict]], caption: str) -> str:
         + f"<td>{_number(metric.get('weighted_mae'))}</td>"
         + f"<td>{_number(metric.get('observed_claims'), 2)}</td>"
         + f"<td>{_number(metric.get('predicted_claims'), 2)}</td>"
-        + f"<td>{_number(metric.get('observed_predicted_ratio'))}</td></tr>"
+        + f"<td>{_number(metric.get('observed_predicted_ratio'))}</td>"
+        + (f"<td>{_prediction_direction(metric)}</td>" if direction else "")
+        + "</tr>"
         for label, metric in rows
     )
     return (
@@ -126,7 +149,8 @@ def _metric_table(rows: list[tuple[str, dict]], caption: str) -> str:
         "<th scope='col'>Exposure (years)</th><th scope='col'>Poisson deviance</th>"
         "<th scope='col'>Weighted MAE</th><th scope='col'>Observed claims</th>"
         "<th scope='col'>Predicted claims</th><th scope='col'>Observed / predicted</th>"
-        f"</tr></thead><tbody>{body}</tbody></table></div>"
+        + ("<th scope='col'>Observed − predicted (claims)</th>" if direction else "")
+        + f"</tr></thead><tbody>{body}</tbody></table></div>"
     )
 
 
@@ -523,8 +547,10 @@ def render_markdown(results: dict) -> str:
             "",
             "## Selected-model segments",
             "",
-            "| Segment / group | Rows | Exposure | Poisson deviance | Observed / predicted |",
-            "|---|---:|---:|---:|---:|",
+            "청구 건수의 기술적 차이: 관측 − 예측이 양수면 과소예측, 음수면 과대예측입니다. 인과 설명·보험금 판단·유의성 판정이 아닙니다.",
+            "",
+            "| Segment / group | Rows | Exposure | Poisson deviance | Observed / predicted | Observed − predicted (claims) |",
+            "|---|---:|---:|---:|---:|---|",
         ]
     )
     for row in results.get("segments", []):
@@ -534,7 +560,7 @@ def render_markdown(results: dict) -> str:
         label = _e(label).replace("|", "&#124;").replace("\n", " ")
         lines.append(
             f"| {label} | {_integer(row.get('rows'))} | {_number(row.get('exposure'), 2)} | "
-            f"{_number(row.get('mean_poisson_deviance'))} | {_number(row.get('observed_predicted_ratio'))} |"
+            f"{_number(row.get('mean_poisson_deviance'))} | {_number(row.get('observed_predicted_ratio'))} | {_prediction_direction(row)} |"
         )
     lines.extend(
         [
@@ -638,7 +664,9 @@ def _segment_sections(results: dict) -> str:
         '<details class="segment-dimension" open><summary>'
         + f"{_e(_SEGMENT_LABELS.get(name, name))} · {len(rows)}개 기존 집단</summary>"
         + _metric_table(
-            rows, f"{_SEGMENT_LABELS.get(name, name)} ({name}) · 선택 모델의 저장된 집단별 오차"
+            rows,
+            f"{_SEGMENT_LABELS.get(name, name)} ({name}) · 선택 모델의 저장된 집단별 오차",
+            direction=True,
         )
         + "</details>"
         for name, rows in dimensions.items()
@@ -751,6 +779,7 @@ figure {{margin:24px 0;}} figcaption {{color:var(--muted); font-size:.87rem; mar
 {_calibration_table(calibration_rows)}
 <h3>차원별 집단 오차 탐색</h3><p>아래 펼침 항목에서 운전자 연령·차량 연령·지역을 비교하세요. 각 표는 선택 모델 <strong>{_e(_MODEL_LABELS.get(selected, selected))}</strong>의 저장된 집단만 보여줍니다. 행 수·노출량·관측/예측 청구를 함께 읽으며, 교차 집단·다른 모델의 집단별 결과·인과 설명을 뜻하지 않습니다.</p>
 <p>관측/예측 비율이 1보다 크면 이 집단에서 과소예측, 1보다 작으면 과대예측입니다. 비율이 없으면 N/A로 표시합니다. Sparse는 행 수 50개 미만 또는 노출 합계 10년 미만을 뜻합니다. 각 행의 표시는 유지하며, 해당 구간의 불확실성에 주의합니다.</p>
+<p>청구 건수의 기술적 차이: 관측 − 예측이 양수면 과소예측, 음수면 과대예측입니다. 인과 설명·보험금 판단·유의성 판정이 아닙니다. 표시된 두 자리에서 같아 보여도 차이의 부호는 저장된 원래 값에서 계산합니다.</p>
 {_segment_sections(results)}</section>
 <section aria-labelledby="conditions"><h2 id="conditions">관측 지표와 기록된 조건의 구분</h2>
 <p>위 숫자는 측정값입니다. 아래는 저장된 메타데이터의 조건 기록이며 승인·규제 적합성 점수로 바꾸지 않습니다.</p>
