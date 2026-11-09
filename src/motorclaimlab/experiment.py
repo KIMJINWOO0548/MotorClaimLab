@@ -147,10 +147,11 @@ def run_experiment(
         memberships = []
         for name, subset in partitions.items():
             ids = "\n".join(str(int(pid)) for pid in subset.IDpol).encode("ascii")
+            subset_audit = validate_frame(subset)
             split_summaries[name] = {
-                "rows": len(subset),
-                "claims": int(subset.ClaimNb.sum()),
-                "exposure": float(subset.Exposure.sum()),
+                "rows": subset_audit["rows"],
+                "claims": subset_audit["claims"],
+                "exposure": subset_audit["exposure"],
                 "membership_sha256": hashlib.sha256(ids).hexdigest(),
             }
             memberships.append(subset[["IDpol"]].assign(split=name))

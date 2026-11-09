@@ -1,0 +1,264 @@
+{
+  "record_version": 1,
+  "date_utc": "2026-11-09",
+  "base_ref": "improve/competitive-depth-20261106",
+  "base_sha": "69e0e85582530f77a99928beeb2ea09c8576ce3e",
+  "branch": "improve/exposure-total-integrity-20261109",
+  "provenance": "Independent implementation from accessible remote code; no inaccessible preservation files read or restored.",
+  "scope": "Exact Python integer claim totals and stable finite binary64 exposure totals for input audit and split metadata.",
+  "changes": [
+    "Accumulate individually validated ClaimNb values as Python int.",
+    "Use math.fsum for Exposure and reject overflow/nonfinite aggregate with a fixed ValueError.",
+    "Reuse validated audit aggregates for each partition summary without changing sampling, membership, or model selection."
+  ],
+  "environment": {
+    "platform": "Linux",
+    "python": "3.12.14",
+    "packages": {
+      "numpy": "2.5.4",
+      "pandas": "2.3.3",
+      "scipy": "1.18.1",
+      "scikit-learn": "1.9.1",
+      "matplotlib": "3.11.2",
+      "liac-arff": "2.5.0",
+      "pytest": "9.2.0",
+      "ruff": "0.17.3",
+      "build": "1.6.1",
+      "setuptools": "84.2.1",
+      "wheel": "0.48.0"
+    }
+  },
+  "dependency_setup": {
+    "project_only_virtual_environment": true,
+    "existing_user_install_authorization_verified": true,
+    "official_pypi_index": true,
+    "require_hashes": true,
+    "lock_sha256": "3736d92e0fcc92f485a1786d495422d4345f05c5c44c6d84baac0468555b5589",
+    "global_install_or_settings_changes": false
+  },
+  "tests": {
+    "baseline": {
+      "run": 167,
+      "passed": 167,
+      "exit_code": 0
+    },
+    "new_red": {
+      "run": 10,
+      "failed": 8,
+      "passed": 2,
+      "numeric_warnings_from_old_path": 2,
+      "exit_code": 1
+    },
+    "affected_green": {
+      "run": 53,
+      "passed": 53,
+      "exit_code": 0
+    },
+    "full_green": {
+      "run": 177,
+      "passed": 177,
+      "skipped": 0,
+      "exit_code": 0
+    }
+  },
+  "coverage": [
+    "Exact integer total above 2**53 and int64.",
+    "Positive exposure contributions retained where binary64 can represent the sum.",
+    "Zero claims and large representable exposure remain valid.",
+    "Nonfinite total rejected without RuntimeWarning.",
+    "Invalid exposure rejected before fitting or creating experiment output.",
+    "Full/sampled split rows, exact claims, stable exposure, membership hashes and saved JSON.",
+    "Input DataFrame and synthetic source bytes preserved."
+  ],
+  "isolation": "Large-count orchestration cases stub fitting, SQLite EDA and rendering; existing actual synthetic workflow tests are separate and passed.",
+  "cli_smoke": {
+    "synthetic_only": true,
+    "normal_cli_exit": 0,
+    "full_audit": {
+      "rows": 300,
+      "claims": 200,
+      "exposure": 200.0
+    },
+    "sampled_rows": 180,
+    "sampled_claims": 125,
+    "sampled_exposure": 120.25,
+    "sample_totals_reconcile": true,
+    "source_unchanged": true,
+    "existing_output_refused": true,
+    "overflow_cli_exit": 1,
+    "overflow_output_created": false,
+    "overflow_source_unchanged": true,
+    "policy_records_or_predictions_in_evidence": false,
+    "temp_raw_artifacts_removed_on_exit": true,
+    "model_accuracy_claimed": false
+  },
+  "failed_controller_attempt": {
+    "controller_exit_code": 1,
+    "error_type": "ModuleNotFoundError",
+    "phase": "post-CLI aggregate comparison controller import",
+    "normal_cli_had_returned_zero": true,
+    "application_regression": false,
+    "completion_evidence": false,
+    "temporary_directory_cleaned": true
+  },
+  "checks": [
+    {
+      "name": "lint",
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "ruff",
+        "check",
+        "src",
+        "tests",
+        "scripts"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "format",
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "ruff",
+        "format",
+        "--check",
+        "src",
+        "tests",
+        "scripts"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "dependencies",
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "pip",
+        "check"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "evidence",
+      "command": [
+        ".venv/bin/python",
+        "scripts/check_evidence.py"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "historical-presentation",
+      "command": [
+        ".venv/bin/python",
+        "scripts/check_presentation.py",
+        "--renderer-ref",
+        "6efb433791c012e273ef12a6a6fcb28dfd525b51"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "build",
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "build",
+        "--no-isolation"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "distribution",
+      "command": [
+        ".venv/bin/python",
+        "scripts/check_distribution.py"
+      ],
+      "exit_code": 0
+    }
+  ],
+  "preservation": {
+    "base_sha": "69e0e85582530f77a99928beeb2ea09c8576ce3e",
+    "tracked_evidence_files_unchanged": 63,
+    "protected_source_config_unchanged": [
+      "src/motorclaimlab/report.py",
+      "src/motorclaimlab/presentation.py",
+      "src/motorclaimlab/models.py",
+      "src/motorclaimlab/evaluation.py",
+      "src/motorclaimlab/eda.py",
+      "requirements.lock",
+      "requirements-dev.lock",
+      "pyproject.toml"
+    ]
+  },
+  "read_only_internal_review": {
+    "agents": 2,
+    "blocking_findings": 0,
+    "external_human_or_actuarial_review": false
+  },
+  "source_sha256": {
+    "src/motorclaimlab/data.py": "3ba7ad6a42db238f598f6974a61951c166b547292945d7ac9d2fb92d721d2122",
+    "src/motorclaimlab/experiment.py": "2f59e9e126ec6ccfa1a791ec1f0e082a0a4c8eca856b15e1f4ece635607879f3",
+    "tests/test_population_totals.py": "0196af857f7c95adc301db224035c71dd9080068a9cac3d6c3d656a4618741ed"
+  },
+  "package_code_fingerprint": "f01c3e5b335925dccb755dacaa32fd5715850d18f3dd297eade9ebe362de0e54",
+  "local_evidence": {
+    "ignored_run_directory": "reports/runs/20261109T161703Z-0e408681-population-totals",
+    "file_sha256": {
+      "numeric-reproduction.json": "262a1f1f335455648243050d5228e2c03853df9a602de462e60cedf1727e2f49",
+      "dependency-install.json": "6c52b5f6e8954f695bb05d0d345694565f70b2b11d877f0ff9c02551dfe0cdf9",
+      "environment.json": "b1c82fab3adc9a3c1343437de5e65691983ab5a1349772631ee7a76fc0f2c09d",
+      "baseline-pytest.log": "54b463ab91528aba92d7871e11350e827f4fe22b58baba8e5b3fdcd9afd48a5d",
+      "totals-red.log": "7f349a5e56483799db0ef9afbb5e4429b78171b96833d1775654cf2752d5bab8",
+      "totals-green.log": "3ac87106e6c059444e7441f99547900caef6d0c391b7c4aef80563146b370a60",
+      "full-pytest.log": "419b15482fd57880f3d40b9829157816730a9b2f35ae5d905a64907be1ceb151",
+      "lint.log": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "format.log": "5a29981aebe12cf610955c0455e62c60bdd53f693ac0d954a67db9c7f9e5042a",
+      "dependencies.log": "35bb3d1e4d1d0091788acae77c6d707f1dfb81d2384e34fd54a205f9497ce313",
+      "evidence.log": "a2d53f787b65f4506f0ab3d925691934994f6ace8c683cc3421d5050b7e4f89c",
+      "historical-presentation.log": "1ca4176cdcc1293a14c57d75c6b2f7d55e60b9772ecdb5b29baf8196d218da17",
+      "build.log": "b7761a22163588e655366205fd47d8fac046f0108c74f831f40584717438e785",
+      "distribution.log": "208c4426c39e281e4e35e0b0895b5c0b964a5c2bac38e70135e2fb22f4d33bc4",
+      "cli-smoke-attempt1.json": "cdb6e4d13ce694100ec85d6c43ddc8eecb51f5789cb4ec6f5d4f48408a4eaec4",
+      "cli-smoke.json": "8730faa570e411fa173ba529686c1d770b2921d5f71a340e0f8c164f444bfa08",
+      "preservation.json": "f38d289811182c1a66e230ed3cf395e57f97b16a75187bf824a272329e45a13d",
+      "final-package-controller-failure.json": "141b9616cd94c3915c506429280a724a44d026830fdfb38b40c4eedb0385dea8"
+    }
+  },
+  "publication": {
+    "repo_visibility_verified": "public",
+    "policy_rows_identifiers_predictions_or_fitted_models_in_evidence": false,
+    "new_ui_change": false,
+    "deployment_or_package_publication": false
+  },
+  "not_run": [
+    "Full public-data retraining/download.",
+    "New browser session.",
+    "Windows and other Python versions.",
+    "Current clinical or operational accuracy.",
+    "Remote CI success not established by this local record."
+  ],
+  "limitations": [
+    "Only input audit and split metadata are strengthened; evaluation float metrics and SQLite SUM retain their numerical limits.",
+    "No full-pipeline arbitrary-precision integer or exact-decimal exposure guarantee.",
+    "Separately rounded partition exposure totals may differ slightly from a whole-population sum.",
+    "Additional split validation has no claimed speedup.",
+    "Historical model results and real-world validity are not re-established by synthetic regression checks."
+  ],
+  "extra_packaging_controller_failure": {
+    "build_exit": 0,
+    "distribution_check_exit": 0,
+    "controller_exit": 1,
+    "error_type": "KeyError",
+    "phase": "Extra source-archive evidence-member assertion",
+    "missing_member": "docs/evidence/population-totals-20261109/verification.json",
+    "runtime_wheel_source_bytes_equal": true,
+    "next_step": "Compare with the repository source-archive contract before deciding whether a package change is required.",
+    "resolution": "Existing MANIFEST includes Markdown/tests and excludes JSON evidence; final verification follows that preserved contract."
+  },
+  "source_archive_contract": {
+    "focused_markdown_and_tests_included": true,
+    "json_evidence_available_in_git": true,
+    "json_evidence_omitted_from_sdist_by_existing_rule": true,
+    "manifest_changed": false
+  }
+}

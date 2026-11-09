@@ -1,5 +1,22 @@
 # Status
 
+## Audit and split-total integrity — 2026-11-09 UTC
+
+Independent change on `improve/exposure-total-integrity-20261109` from accessible
+remote base `69e0e85582530f77a99928beeb2ea09c8576ce3e`. Input audit now keeps
+exact integer claim sums and rejects nonfinite aggregate exposure; split metadata
+reuses the same validated totals. Normal and sampled population meanings, model
+selection, frozen results and renderer/UI are preserved. Inaccessible
+preservation files were not read or restored.
+
+Actual local Linux/Python 3.12.14: baseline **167 passed**, independent new RED
+**8 failed / 2 passed**, affected **53 passed**, full **177 passed**. Lint,
+format, dependency and existing Git-blob/pinned-presentation checks passed.
+See [scope, controller failure and unverified limits](POPULATION_TOTALS_2026-11-09.md)
+and [aggregate-only evidence](evidence/population-totals-20261109/verification.json).
+Commit/push/remote CI remain separate observations. No real-data accuracy or
+full-pipeline arbitrary-precision support is claimed.
+
 ## Renderer 3.4 partition investigation — 2026-11-06 UTC
 
 The report now exposes within-dimension cancellation, largest under/over count differences and saved-test support, with native links to all group tables. Invalid/incomplete totals suppress derived findings; overlapping dimensions are never summed. Models, data, split/selection and historical 8.21% model result are unchanged. The fresh-manifest browser-status correction reproduced RED, then **44 affected tests** and the final full suite **167 tests** passed (47.73 s during other host work), with lint/format passing. The new manifest says NOT_RUN at generation rather than inheriting a historical browser denial; browser results are recorded separately.

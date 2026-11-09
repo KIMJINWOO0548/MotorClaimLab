@@ -5,6 +5,7 @@ from __future__ import annotations
 import gzip
 import hashlib
 import json
+import math
 from datetime import UTC, datetime
 from io import BytesIO
 from pathlib import Path
@@ -145,11 +146,20 @@ def validate_frame(frame: pd.DataFrame) -> dict:
             or values.map(lambda value: not isinstance(value, str) or not value.strip()).any()
         ):
             raise ValueError(f"{name} must contain nonempty text categories")
+    # Each count has been checked as an exactly representable integer. Keep
+    # their sum out of both binary64 rounding and fixed-width integer overflow.
+    claims = sum(int(value) for value in numeric["ClaimNb"])
+    try:
+        exposure = math.fsum(numeric["Exposure"])
+    except OverflowError:
+        raise ValueError("Exposure total must be finite") from None
+    if not math.isfinite(exposure):
+        raise ValueError("Exposure total must be finite")
     return {
         "rows": int(len(frame)),
         "columns": len(frame.columns),
-        "claims": int(numeric["ClaimNb"].sum()),
-        "exposure": float(numeric["Exposure"].sum()),
+        "claims": claims,
+        "exposure": exposure,
         "exposure_gt_one": int((numeric["Exposure"] > 1).sum()),
         "claims_gt_four": int((numeric["ClaimNb"] > 4).sum()),
         "zero_claim_rows": int((numeric["ClaimNb"] == 0).sum()),

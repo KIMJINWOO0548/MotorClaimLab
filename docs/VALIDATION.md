@@ -1,5 +1,16 @@
 # Verification evidence
 
+## Audit and split-total increment — 2026-11-09 UTC
+
+The accessible remote-base suite passed 167 cases. Ten new synthetic boundary
+cases reproduced eight failures; after the audit/partition correction, the
+affected suite passed 53 cases and the full suite passed 177. No prior expected
+answers or frozen results were changed. This is a separate implementation from
+inaccessible preservation files, with no UI update or actual-data rerun.
+Exact scope, commands, observed controller failure, successful checks and limits
+are recorded in [POPULATION_TOTALS_2026-11-09.md](POPULATION_TOTALS_2026-11-09.md)
+and its linked aggregate-only evidence. Historical checks below remain distinct.
+
 2026-11-01 KST. Internal AI-assisted implementation/review, not external human or actuarial review.
 
 ## Implementation checkpoint
