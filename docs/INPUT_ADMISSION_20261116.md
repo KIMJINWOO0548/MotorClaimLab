@@ -10,4 +10,4 @@ failed before the change and passed after it. This admission check is not a
 streaming parser or a guarantee against concurrently growing files. Row limits,
 parser memory expansion and real-data accuracy remain separate work.
 
-Ruff check and format check pass on the changed source/test. Full pytest is running separately; it is not yet claimed as passed.
+Ruff check and format check pass on changed source/test. Related tests: 44/44 pass. First full pytest: 178 pass, 1 CLI subprocess import failure (package not on subprocess path). With source directory explicitly supplied through PYTHONPATH, full pytest: 179/179 pass in 44.73 seconds, exit 0. Python 3.13.16; dependencies from requirements-dev.lock. No actual dataset refit or cloud CI claimed.
