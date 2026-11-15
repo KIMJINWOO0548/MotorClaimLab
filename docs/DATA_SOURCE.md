@@ -28,3 +28,5 @@ Fields: IDpol, ClaimNb, Exposure, Area, VehPower, VehAge, DrivAge, BonusMalus, V
 Unusual positive exposures above one year and high claim counts are retained and counted in the audit. Clipping used by other tutorials is not an authenticated source correction. Nonfinite/zero/negative exposure, invalid count targets, empty categories and duplicate policy identifiers are rejected explicitly.
 
 Local CSV/ARFF admission is limited to 128 MiB before parsing. Duplicate in-memory column names are rejected. This is not a streaming memory guarantee.
+
+Supported source row count is at most 1,000,000. CSV checks at most limit+1 rows and rejects oversized inputs rather than returning a truncated population. ARFF row count is checked after parsing the size-limited file.
