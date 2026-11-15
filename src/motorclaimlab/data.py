@@ -8,6 +8,7 @@ import json
 import math
 from datetime import UTC, datetime
 from io import BytesIO
+from itertools import islice
 from pathlib import Path
 from urllib.request import Request, urlopen
 
@@ -98,8 +99,31 @@ def load_dataset(path: Path) -> pd.DataFrame:
         frame = pd.read_csv(path, nrows=MAX_INPUT_ROWS + 1)
     elif path.suffix.lower() == ".arff":
         with path.open(encoding="utf-8") as stream:
-            contents = arff.load(stream)
-        frame = pd.DataFrame(contents["data"], columns=[name for name, _ in contents["attributes"]])
+            contents = arff.load(stream, return_type=arff.DENSE_GEN)
+            columns = [name for name, _ in contents["attributes"]]
+            if len(columns) != len(set(columns)):
+                raise ValueError("Duplicate column names are not allowed")
+            if set(columns) != set(COLUMNS):
+                raise ValueError("Schema mismatch in ARFF header")
+            # Consume the lazy parser while the stream remains open. Never
+            # materialize all Python row lists as well as the full DataFrame.
+            chunks = []
+            count = 0
+            rows = iter(contents["data"])
+            while True:
+                batch = list(islice(rows, min(10_000, MAX_INPUT_ROWS - count + 1)))
+                if not batch:
+                    break
+                count += len(batch)
+                if count > MAX_INPUT_ROWS:
+                    raise ValueError(
+                        "Input exceeds 1,000,000 row limit; no rows are silently dropped"
+                    )
+                chunks.append(pd.DataFrame(batch, columns=columns))
+                del batch
+            frame = (
+                pd.concat(chunks, ignore_index=True) if chunks else pd.DataFrame(columns=columns)
+            )
     else:
         raise ValueError("Input must be a local .csv or .arff file")
     validate_frame(frame)
