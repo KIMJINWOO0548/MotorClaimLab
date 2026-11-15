@@ -18,6 +18,16 @@ from .report import (
 )
 
 
+def _unique_object(pairs: list[tuple[str, object]]) -> dict:
+    """Reject ambiguous saved declarations without exposing field contents."""
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("Duplicate JSON key in saved aggregates")
+        result[key] = value
+    return result
+
+
 def _sha(content: bytes) -> str:
     return hashlib.sha256(content).hexdigest()
 
@@ -44,7 +54,7 @@ def render_saved(results_path: Path, output_dir: Path, selection_path: Path | No
     if output_dir.exists():
         raise FileExistsError("Presentation output already exists; choose a fresh directory")
     source = results_path.read_bytes()
-    results = json.loads(source)
+    results = json.loads(source, object_pairs_hook=_unique_object)
     if not isinstance(results, dict) or any(
         name not in results for name in ("study", "metrics", "provenance", "selected_model")
     ):
@@ -53,7 +63,7 @@ def render_saved(results_path: Path, output_dir: Path, selection_path: Path | No
     if selection_path is not None:
         selection_path = Path(selection_path)
         selection_source = selection_path.read_bytes()
-        selection = json.loads(selection_source)
+        selection = json.loads(selection_source, object_pairs_hook=_unique_object)
         if (
             not isinstance(selection, dict)
             or selection.get("selected_model") != results["selected_model"]
