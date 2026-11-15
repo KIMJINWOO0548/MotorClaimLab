@@ -20,6 +20,7 @@ DATASET_ID = 41214
 SOURCE_URL = "https://www.openml.org/data/v1/download/20649148/freMTPL2freq.arff"
 SOURCE_MD5 = "f8875568bf0ca622929105197e2db613"
 MAX_DOWNLOAD_BYTES = 128 * 1024 * 1024
+MAX_INPUT_BYTES = 128 * 1024 * 1024
 COLUMNS = (
     "IDpol",
     "ClaimNb",
@@ -90,6 +91,8 @@ def fetch_dataset(directory: Path) -> Path:
 def load_dataset(path: Path) -> pd.DataFrame:
     """Read local CSV/ARFF without correcting or rewriting source data."""
     path = Path(path)
+    if path.stat().st_size > MAX_INPUT_BYTES:
+        raise ValueError("Input exceeds 128 MiB size limit")
     if path.suffix.lower() == ".csv":
         frame = pd.read_csv(path)
     elif path.suffix.lower() == ".arff":
@@ -108,6 +111,8 @@ def load_dataset(path: Path) -> pd.DataFrame:
 
 def validate_frame(frame: pd.DataFrame) -> dict:
     """Reject invalid observations, retaining valid unusual source values."""
+    if not frame.columns.is_unique:
+        raise ValueError("Duplicate column names are not allowed")
     missing = sorted(set(COLUMNS) - set(frame.columns))
     extra = sorted(set(frame.columns) - set(COLUMNS))
     if missing or extra:

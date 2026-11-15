@@ -26,3 +26,5 @@ Descriptions disagree on row count (677,991 versus 678,013); every actual run re
 Fields: IDpol, ClaimNb, Exposure, Area, VehPower, VehAge, DrivAge, BonusMalus, VehBrand, VehGas, Density, Region. IDpol is a policy identifier; ClaimNb is the count target; Exposure is the observed duration in years. There is no reliable observation-date column. No chronological validity is claimed.
 
 Unusual positive exposures above one year and high claim counts are retained and counted in the audit. Clipping used by other tutorials is not an authenticated source correction. Nonfinite/zero/negative exposure, invalid count targets, empty categories and duplicate policy identifiers are rejected explicitly.
+
+Local CSV/ARFF admission is limited to 128 MiB before parsing. Duplicate in-memory column names are rejected. This is not a streaming memory guarantee.
