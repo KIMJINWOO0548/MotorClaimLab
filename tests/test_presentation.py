@@ -1,9 +1,9 @@
 """Renderer regressions use frozen aggregate fixtures; fitting is forbidden."""
 
-import copy
 import hashlib
 import json
 import re
+from pathlib import Path
 
 import pytest
 from test_report import _results
@@ -121,23 +121,17 @@ def test_saved_render_preserves_inputs_and_records_separate_renderer(tmp_path, m
 
     monkeypatch.setattr(models, "fit_models", forbidden)
     monkeypatch.setattr(experiment, "run_experiment", forbidden)
-    result = _saved()
-    original = copy.deepcopy(result)
+    archive = Path(__file__).resolve().parents[1] / "docs/evidence/benchmark"
     source = tmp_path / "results.json"
     selection = tmp_path / "selection.json"
-    source.write_text(json.dumps(result), encoding="utf-8")
-    selection.write_text(
-        json.dumps(
-            {"selected_model": "poisson_glm", "validation": result["metrics"]["validation"]}
-        ),
-        encoding="utf-8",
-    )
+    source.write_bytes((archive / "results.json").read_bytes())
+    selection.write_bytes((archive / "selection.json").read_bytes())
     before = {p: p.read_bytes() for p in [source, selection]}
     output = tmp_path / "presentation-v3-1"
     manifest = render_saved(source, output, selection)
     assert all(path.read_bytes() == contents for path, contents in before.items())
-    assert json.loads(source.read_text()) == original
-    assert manifest["model_execution"] is False and manifest["renderer_version"] == "3.4"
+    assert manifest["model_execution"] is False and manifest["renderer_version"] == "3.5"
+    assert manifest["saved_contract"] == "frozen-legacy"
     assert manifest["browser_validation"] == (
         "NOT_RUN at generation; browser verification is recorded separately"
     )
@@ -145,11 +139,13 @@ def test_saved_render_preserves_inputs_and_records_separate_renderer(tmp_path, m
     assert (
         manifest["inputs"]["selection"]["sha256"] == hashlib.sha256(before[selection]).hexdigest()
     )
-    assert manifest["original_experiment_code_sha256"] == "d" * 64
+    original = json.loads(before[source])
+    assert manifest["original_experiment_code_sha256"] == original["provenance"]["code_sha256"]
     assert len(manifest["renderer_sha256"]) == 64
     assert set(manifest["renderer_sources"]) == {
         "src/motorclaimlab/report.py",
         "src/motorclaimlab/presentation.py",
+        "src/motorclaimlab/saved_contract.py",
     }
     for relative, expected in manifest["artifacts"].items():
         assert hashlib.sha256((output / relative).read_bytes()).hexdigest() == expected
@@ -164,9 +160,8 @@ def test_saved_render_preserves_inputs_and_records_separate_renderer(tmp_path, m
 
 
 def test_mismatched_selection_does_not_create_a_presentation(tmp_path):
-    source = tmp_path / "results.json"
+    source = Path(__file__).resolve().parents[1] / "docs/evidence/benchmark/results.json"
     selection = tmp_path / "selection.json"
-    source.write_text(json.dumps(_saved()))
     selection.write_text(json.dumps({"selected_model": "mean"}))
     output = tmp_path / "output"
     with pytest.raises(ValueError, match="selection"):

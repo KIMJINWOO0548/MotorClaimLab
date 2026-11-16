@@ -1,5 +1,9 @@
 # Status
 
+## Exposure and source provenance — 2026-11-16 KST
+
+The separate improvement branch covers MC1–MC4 with exposure-specific totals, source capture bound to the model's parsed input, validated saved run/selection pairs, and bootstrap abstention. The Windows synthetic suite passed 257 tests. The frozen benchmark and existing browser artifacts were retained. See [the criterion mapping and verification](EXPOSURE_PROVENANCE_20261116.md) for exact coverage and limits.
+
 ## Audit and split-total integrity — 2026-11-09 UTC
 
 Independent change on `improve/exposure-total-integrity-20261109` from accessible

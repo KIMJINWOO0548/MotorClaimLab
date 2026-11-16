@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 
 from motorclaimlab import experiment
-from motorclaimlab.data import split_frame
+from motorclaimlab.data import load_dataset, split_frame
 from motorclaimlab.models import fit_models
 
 
@@ -21,16 +21,43 @@ def _source(frame, tmp_path):
     return source, records
 
 
+def test_model_cannot_train_on_temporary_unhashed_bytes(frame, tmp_path, monkeypatch):
+    source, records = _source(frame, tmp_path)
+    original = source.read_bytes()
+    altered = records.assign(ClaimNb=8).to_csv(index=False).encode()
+    fit = experiment.fit_models
+    seen_counts = []
+
+    def load_after_swap(path):
+        if path != source:
+            return load_dataset(path)
+        path.write_bytes(altered)
+        try:
+            return load_dataset(path)
+        finally:
+            path.write_bytes(original)
+
+    def capture_training(subset, **kwargs):
+        seen_counts.extend(subset.ClaimNb)
+        return fit(subset, **kwargs)
+
+    monkeypatch.setattr(experiment, "load_dataset", load_after_swap, raising=False)
+    monkeypatch.setattr(experiment, "fit_models", capture_training)
+    result = experiment.run_experiment(source, tmp_path / "study", max_iter=3, bootstrap_draws=3)
+    assert result["provenance"]["source_sha256"] == hashlib.sha256(original).hexdigest()
+    assert seen_counts == split_frame(records)["train"].ClaimNb.to_list()
+
+
 def test_source_change_during_load_fails_before_creating_output(frame, tmp_path, monkeypatch):
     source, _ = _source(frame, tmp_path)
-    original_load = experiment.load_dataset
+    original_load = experiment.load_source_snapshot
 
     def changed_load(path):
         loaded = original_load(path)
         path.write_bytes(path.read_bytes() + b"\n")
         return loaded
 
-    monkeypatch.setattr(experiment, "load_dataset", changed_load)
+    monkeypatch.setattr(experiment, "load_source_snapshot", changed_load)
     output = tmp_path / "unstarted"
     with pytest.raises(ValueError, match="Source bytes changed"):
         experiment.run_experiment(source, output, max_iter=3, bootstrap_draws=3)

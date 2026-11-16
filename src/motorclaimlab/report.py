@@ -18,7 +18,7 @@ from matplotlib.backends.backend_svg import FigureCanvasSVG
 from matplotlib.figure import Figure
 
 _MODELS = ("mean", "poisson_glm", "poisson_hgb")
-RENDERER_VERSION = "3.4"
+RENDERER_VERSION = "3.5"
 _MODEL_LABELS = {
     "mean": "Training mean",
     "poisson_glm": "Poisson GLM",
@@ -330,6 +330,8 @@ def _inline_svg(svg: str, key: str, title: str) -> str:
 
 def _interval_values(results: dict):
     boot = results.get("bootstrap", {})
+    if "adequate" in boot and boot["adequate"] is not True:
+        return None
     try:
         raw = [boot[name] for name in ("selected_minus_baseline", "ci_lower", "ci_upper")]
         if any(isinstance(value, bool) for value in raw):
@@ -344,6 +346,32 @@ def _interval_values(results: dict):
         return point, lower, upper
     except (KeyError, TypeError, ValueError):
         return None
+
+
+def _bootstrap_support_text(boot: dict) -> str:
+    if "valid_draws" not in boot:
+        return ""
+    reason = {
+        "insufficient_policies": "테스트 계약이 부족합니다.",
+        "invalid_draws": "계산할 수 없는 재표집 반복이 있습니다.",
+        "insufficient_draws": "유효한 재표집 반복이 부족합니다.",
+        "degenerate_distribution": "재표집 차이 분포에서 사용할 수 있는 구간 폭이 없습니다.",
+    }.get(boot.get("abstention_reason"), "")
+    return (
+        f"유효 반복 {_integer(boot.get('valid_draws'))} / {_integer(boot.get('draws'))}"
+        f" · 최소 {_integer(boot.get('minimum_valid_draws'))}"
+        f" · 최소 테스트 계약 {_integer(boot.get('minimum_policies'))}건"
+        f" · 무효 {_integer(boot.get('invalid_draws'))}"
+        f" · 단일 계약 반복 {_integer(boot.get('degenerate_draws'))}"
+        f" · seed {_e(boot.get('seed', 'N/A'))}. {reason}"
+    ).rstrip()
+
+
+_EXPOSURE_NOTE = (
+    "빈도·보정값·가중 편차·가중 MAE의 분모는 해당 분할 또는 집단의 노출 연수 합계입니다. "
+    "행 수는 표본 크기입니다. 관측/예측 비율의 분모는 예측 청구 건수 합계입니다. "
+    "순보험료: N/A. 이 빈도 자료에는 보험금 액수가 없습니다."
+)
 
 
 def _uncertainty_svg(results: dict, directory: Path | None = None) -> str:
@@ -677,6 +705,9 @@ def render_markdown(results: dict) -> str:
         )
         if results.get("selected_model") == "mean":
             lines.append("기준 모델과 동일한 비교입니다. 개선 효과를 주장하지 않습니다.")
+    support = _bootstrap_support_text(results.get("bootstrap", {}))
+    if support:
+        lines.append(support)
     lines.extend(
         [
             "0은 차이 없음이며 음수는 선택 모델에 유리합니다. 구간은 고정 분할과 frozen fits에 조건부이며 재학습·미래 시점 불확실성을 포함하지 않습니다.",
@@ -734,6 +765,7 @@ def render_markdown(results: dict) -> str:
             "",
             "## Limitations",
             "",
+            f"- {_EXPOSURE_NOTE}",
             "- 빈도는 청구 건수 / 관측 노출 연수이며 적합·평가에 노출 가중치를 사용합니다.",
             "- 시간 순서 검증, 현재 국내 보험 적용성 및 업무 효과는 입증하지 않았습니다.",
             "- 내부 AI 보조 검토는 외부 인간·보험계리 전문가 검수가 아닙니다.",
@@ -775,8 +807,9 @@ def _provenance(results: dict) -> str:
     context = {
         "data": {
             key: provenance.get(key)
-            for key in ("source_sha256", "source_md5", "source_matches_pinned")
+            for key in ("source_sha256", "source_md5", "source_matches_pinned", "source_capture")
         },
+        "run_identity": results.get("run_identity"),
         "original_experiment": {key: provenance.get(key) for key in ("code_sha256", "git_commit")},
         "seed": study.get("seed"),
         "selection_split": study.get("selection_split"),
@@ -859,6 +892,9 @@ def render_report(results: dict) -> str:
         )
         if selected == "mean":
             interval_text += "<p>기준 모델과 동일한 비교입니다. 개선 효과를 주장하지 않습니다.</p>"
+    support = _bootstrap_support_text(boot)
+    if support:
+        interval_text += f'<p class="muted">{support}</p>'
     calibration_rows = results.get("calibration", {}).get(selected, [])
     area_rows = "".join(
         f'<tr><th scope="row">{_e(row.get("area", row.get("Area", "")))}</th>'
@@ -937,6 +973,7 @@ figure {{margin:24px 0;}} figcaption {{color:var(--muted); font-size:.87rem; mar
 </div><figure><figcaption>같은 테스트 자료, 같은 노출 가중 기준. 낮은 편차는 이 분할에서 더 작은 예측 오차를 뜻합니다.</figcaption>{comparison}</figure>
 {_comparison_table(results)}
 <p class="muted">편차와 가중 MAE는 낮을수록 작게 틀립니다. 관측/예측 비율 1은 합계 일치이며, 집단별 보정이나 조건검사 통과를 의미하지 않습니다.</p>
+<p class="muted">{_EXPOSURE_NOTE}</p>
 <div class="run-context"><span>Data <code>{_e(source_prefix)}</code></span><span>Analysis code <code>{_e(code_prefix)}</code></span><span>Renderer {RENDERER_VERSION}</span></div>
 {_provenance(results)}
 </section>

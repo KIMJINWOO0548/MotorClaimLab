@@ -1,5 +1,7 @@
 # MotorClaimLab
 
+2026-11-16 개선본은 학습 파일을 읽는 바이트와 해시를 결합하고, 새 저장 결과를 선택 기록과 대조합니다. 지표별 노출량 분모와 bootstrap 구간을 보류하는 조건은 [개선본 검증 기록](docs/EXPOSURE_PROVENANCE_20261116.md)에 정리했습니다.
+
 Renderer 3.4 adds a partition review index: net versus absolute group gaps, largest under/over differences, support shares and fail-closed saved-total reconciliation. [Read the new frozen-aggregate report](docs/evidence/presentation-v3-4/report.html) and [validation/measurement limits](docs/COMPETITIVE_DEPTH_20261106.md). Historical model results are unchanged.
 
 **자동차보험 청구 빈도를 분석하고 모델의 오차와 한계를 설명하는 재현 가능한 연구 프로젝트.**

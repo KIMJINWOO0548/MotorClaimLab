@@ -6,10 +6,14 @@ import gzip
 import hashlib
 import json
 import math
+import os
+import stat
 from datetime import UTC, datetime
-from io import BytesIO
+from io import BytesIO, TextIOWrapper
 from itertools import islice
 from pathlib import Path
+from tempfile import TemporaryFile
+from typing import BinaryIO
 from urllib.request import Request, urlopen
 
 import arff
@@ -90,15 +94,74 @@ def fetch_dataset(directory: Path) -> Path:
     return target
 
 
+def _source_signature(info: os.stat_result) -> tuple[int, ...]:
+    return (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns)
+
+
+def _capture_source(path: Path, snapshot: BinaryIO) -> dict[str, str]:
+    before = path.stat()
+    if not stat.S_ISREG(before.st_mode):
+        raise ValueError("Source must be a regular file")
+    if before.st_size > MAX_INPUT_BYTES:
+        raise ValueError("Input exceeds 128 MiB size limit")
+
+    sha256 = hashlib.sha256()
+    md5 = hashlib.md5(usedforsecurity=False)
+    total = 0
+    try:
+        with path.open("rb") as source:
+            opened = os.fstat(source.fileno())
+            if not stat.S_ISREG(opened.st_mode) or opened.st_size != before.st_size:
+                raise ValueError("Source changed while opening")
+            if not os.path.samestat(before, opened):
+                if os.name != "nt":
+                    raise ValueError("Source changed while opening")
+                # Windows filesystems can report different identities for paths and handles.
+                with path.open("rb") as current:
+                    if not os.path.samestat(opened, os.fstat(current.fileno())):
+                        raise ValueError("Source changed while opening")
+            while block := source.read(min(1024 * 1024, MAX_INPUT_BYTES - total + 1)):
+                total += len(block)
+                if total > MAX_INPUT_BYTES:
+                    raise ValueError("Input exceeds 128 MiB size limit")
+                snapshot.write(block)
+                sha256.update(block)
+                md5.update(block)
+            if total != opened.st_size or _source_signature(os.fstat(source.fileno())) != (
+                _source_signature(opened)
+            ):
+                raise ValueError("Source changed during snapshot acquisition")
+        if _source_signature(path.stat()) != _source_signature(before):
+            raise ValueError("Source changed during snapshot acquisition")
+    except FileNotFoundError as exc:
+        raise ValueError("Source changed during snapshot acquisition") from exc
+
+    return {"source_sha256": sha256.hexdigest(), "source_md5": md5.hexdigest()}
+
+
+def load_source_snapshot(path: Path) -> tuple[pd.DataFrame, dict[str, str]]:
+    """Acquire a private snapshot, then parse only the bytes hashed during acquisition."""
+    path = Path(path)
+    suffix = path.suffix.lower()
+    if suffix not in (".csv", ".arff"):
+        raise ValueError("Input must be a local .csv or .arff file")
+    with TemporaryFile(mode="w+b") as snapshot:
+        fingerprints = _capture_source(path, snapshot)
+        snapshot.seek(0)
+        return _parse_source(snapshot, suffix), fingerprints
+
+
 def load_dataset(path: Path) -> pd.DataFrame:
     """Read local CSV/ARFF without correcting or rewriting source data."""
-    path = Path(path)
-    if path.stat().st_size > MAX_INPUT_BYTES:
-        raise ValueError("Input exceeds 128 MiB size limit")
-    if path.suffix.lower() == ".csv":
-        frame = pd.read_csv(path, nrows=MAX_INPUT_ROWS + 1)
-    elif path.suffix.lower() == ".arff":
-        with path.open(encoding="utf-8") as stream:
+    frame, _ = load_source_snapshot(path)
+    return frame
+
+
+def _parse_source(snapshot: BinaryIO, suffix: str) -> pd.DataFrame:
+    if suffix == ".csv":
+        frame = pd.read_csv(snapshot, nrows=MAX_INPUT_ROWS + 1)
+    else:
+        with TextIOWrapper(snapshot, encoding="utf-8") as stream:
             contents = arff.load(stream, return_type=arff.DENSE_GEN)
             columns = [name for name, _ in contents["attributes"]]
             if len(columns) != len(set(columns)):
@@ -124,8 +187,6 @@ def load_dataset(path: Path) -> pd.DataFrame:
             frame = (
                 pd.concat(chunks, ignore_index=True) if chunks else pd.DataFrame(columns=columns)
             )
-    else:
-        raise ValueError("Input must be a local .csv or .arff file")
     validate_frame(frame)
     for name in NUMERIC:
         frame[name] = pd.to_numeric(frame[name], errors="raise")

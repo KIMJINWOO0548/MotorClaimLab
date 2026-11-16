@@ -1,8 +1,10 @@
+import os
+from io import BytesIO
 from pathlib import Path
 
 import pytest
 
-from motorclaimlab import data, experiment
+from motorclaimlab import data
 
 
 def test_source_hash_rejects_oversize_before_open(tmp_path, monkeypatch):
@@ -18,7 +20,7 @@ def test_source_hash_rejects_oversize_before_open(tmp_path, monkeypatch):
 
     monkeypatch.setattr(Path, "open", checked_open)
     with pytest.raises(ValueError, match="size limit"):
-        experiment._source_fingerprints(source)
+        data._capture_source(source, BytesIO())
 
 
 def test_source_hash_enforces_limit_during_read(tmp_path, monkeypatch):
@@ -35,7 +37,7 @@ def test_source_hash_enforces_limit_during_read(tmp_path, monkeypatch):
 
     monkeypatch.setattr(Path, "open", growing_open)
     with pytest.raises(ValueError, match="size limit|changed"):
-        experiment._source_fingerprints(source)
+        data._capture_source(source, BytesIO())
 
 
 def test_source_hash_regular_bytes_preserves_both_digests(tmp_path):
@@ -44,7 +46,7 @@ def test_source_hash_regular_bytes_preserves_both_digests(tmp_path):
     source = tmp_path / "source.csv"
     raw = b"IDpol,ClaimNb\n1,0\n"
     source.write_bytes(raw)
-    assert experiment._source_fingerprints(source) == {
+    assert data._capture_source(source, BytesIO()) == {
         "source_sha256": hashlib.sha256(raw).hexdigest(),
         "source_md5": hashlib.md5(raw, usedforsecurity=False).hexdigest(),
     }
@@ -85,14 +87,14 @@ def test_growth_after_open_stops_at_limit_plus_one(tmp_path, monkeypatch):
 
     monkeypatch.setattr(Path, "open", open_source)
     with pytest.raises(ValueError, match="size limit"):
-        experiment._source_fingerprints(source)
+        data._capture_source(source, BytesIO())
     assert reads == [33]
 
 
 def test_same_size_mutation_during_hash_is_rejected(tmp_path, monkeypatch):
     source = tmp_path / "changing.csv"
     source.write_bytes(b"old")
-    original_md5 = experiment.hashlib.md5
+    original_md5 = data.hashlib.md5
 
     class ChangingDigest:
         def __init__(self, inner):
@@ -101,8 +103,6 @@ def test_same_size_mutation_during_hash_is_rejected(tmp_path, monkeypatch):
         def update(self, block):
             self.inner.update(block)
             source.write_bytes(b"new")
-            import os
-
             info = source.stat()
             os.utime(source, ns=(info.st_atime_ns, info.st_mtime_ns + 1_000_000_000))
 
@@ -110,22 +110,24 @@ def test_same_size_mutation_during_hash_is_rejected(tmp_path, monkeypatch):
             return self.inner.hexdigest()
 
     monkeypatch.setattr(
-        experiment.hashlib, "md5", lambda *a, **kw: ChangingDigest(original_md5(*a, **kw))
+        data.hashlib, "md5", lambda *a, **kw: ChangingDigest(original_md5(*a, **kw))
     )
     with pytest.raises(ValueError, match="changed"):
-        experiment._source_fingerprints(source)
+        data._capture_source(source, BytesIO())
 
 
+@pytest.mark.skipif(os.name != "nt", reason="Windows path and handle identities can differ")
 def test_stable_path_and_descriptor_metadata_need_not_share_identity(tmp_path, monkeypatch):
     from types import SimpleNamespace
 
     source = tmp_path / "stable.csv"
     source.write_bytes(b"stable")
-    original_fstat = experiment.os.fstat
+    original_fstat = data.os.fstat
 
     def descriptor_stat(fd):
         value = original_fstat(fd)
         return SimpleNamespace(
+            st_mode=value.st_mode,
             st_dev=value.st_dev + 1,
             st_ino=value.st_ino + 1,
             st_size=value.st_size,
@@ -133,5 +135,5 @@ def test_stable_path_and_descriptor_metadata_need_not_share_identity(tmp_path, m
             st_ctime_ns=value.st_ctime_ns,
         )
 
-    monkeypatch.setattr(experiment.os, "fstat", descriptor_stat)
-    assert experiment._source_fingerprints(source)["source_sha256"]
+    monkeypatch.setattr(data.os, "fstat", descriptor_stat)
+    assert data._capture_source(source, BytesIO())["source_sha256"]

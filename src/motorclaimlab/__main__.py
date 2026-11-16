@@ -17,7 +17,9 @@ def main(argv=None) -> int:
         "render", help="Derive a presentation from frozen aggregate results"
     )
     render.add_argument("--results", type=Path, required=True)
-    render.add_argument("--selection", type=Path)
+    render.add_argument(
+        "--selection", type=Path, help="Selection record (defaults to sibling selection.json)"
+    )
     render.add_argument("--output", type=Path, required=True)
     run = commands.add_parser("run", help="Run frozen study and create a standalone report")
     run.add_argument("--input", type=Path, required=True)

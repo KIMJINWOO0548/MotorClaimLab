@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 from test_presentation import _saved
+from test_saved_json_integrity import current_saved
 
 from motorclaimlab.presentation import render_saved
 from motorclaimlab.report import render_markdown, render_report
@@ -111,27 +112,19 @@ def test_new_renderer_manifest_tracks_current_source_and_outputs_on_fresh_saved_
     monkeypatch.setattr(models, "fit_models", forbidden)
     source = tmp_path / "synthetic-aggregates.json"
     selection = tmp_path / "synthetic-selection.json"
-    results = _sampled()
+    results, selection_record = current_saved()
     source.write_text(json.dumps(results), encoding="utf-8")
-    selection.write_text(
-        json.dumps(
-            {
-                "selected_model": results["selected_model"],
-                "validation": results["metrics"]["validation"],
-            }
-        ),
-        encoding="utf-8",
-    )
+    selection.write_text(json.dumps(selection_record), encoding="utf-8")
     original = {path: path.read_bytes() for path in (source, selection)}
     output = tmp_path / "renderer-3-2"
     manifest = render_saved(source, output, selection)
-    assert manifest["renderer_version"] == "3.4" and manifest["model_execution"] is False
+    assert manifest["renderer_version"] == "3.5" and manifest["model_execution"] is False
     root = Path(__file__).resolve().parents[1]
     for name, expected in manifest["renderer_sources"].items():
         assert hashlib.sha256((root / name).read_bytes()).hexdigest() == expected
     for name, expected in manifest["artifacts"].items():
         assert hashlib.sha256((output / name).read_bytes()).hexdigest() == expected
     assert len(manifest["artifacts"]) == 8
-    assert "84.75" in _study_context((output / "report.html").read_text(encoding="utf-8"))
-    assert "Study exposure: 84.75 years" in (output / "report.md").read_text(encoding="utf-8")
+    assert "358,499.45" in _study_context((output / "report.html").read_text(encoding="utf-8"))
+    assert "Study exposure: 358,499.45 years" in (output / "report.md").read_text(encoding="utf-8")
     assert all(path.read_bytes() == value for path, value in original.items())

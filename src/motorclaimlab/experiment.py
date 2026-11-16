@@ -5,9 +5,7 @@ from __future__ import annotations
 import hashlib
 import importlib.metadata
 import json
-import os
 import platform
-import stat
 import subprocess
 import time
 from datetime import UTC, datetime
@@ -16,11 +14,10 @@ from pathlib import Path
 import pandas as pd
 from threadpoolctl import threadpool_limits
 
-from . import data
 from .data import (
     SEED,
     SOURCE_MD5,
-    load_dataset,
+    load_source_snapshot,
     sample_frame,
     split_frame,
     validate_frame,
@@ -28,6 +25,7 @@ from .data import (
 from .eda import summarize_sql
 from .evaluation import calibration_table, evaluate_predictions, paired_bootstrap, segment_table
 from .models import fit_models
+from .saved_contract import run_identity
 
 LIMITATIONS = [
     "No observation-date field: policy holdout is not a temporal validation.",
@@ -53,35 +51,18 @@ def code_fingerprint() -> str:
     return digest.hexdigest()
 
 
-def _source_fingerprints(path: Path) -> dict[str, str]:
-    """Hash a bounded regular source, rejecting observed replacement or mutation."""
+def _source_metadata(path: Path) -> tuple[int, ...]:
+    info = path.stat()
+    return info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns
 
-    def signature(info):
-        return (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns)
 
-    before = path.stat()
-    if not stat.S_ISREG(before.st_mode):
-        raise ValueError("Source must be a regular file")
-    if before.st_size > data.MAX_INPUT_BYTES:
-        raise ValueError("Input exceeds 128 MiB size limit")
-    sha256 = hashlib.sha256()
-    md5 = hashlib.md5(usedforsecurity=False)
-    with path.open("rb") as stream:
-        opened = os.fstat(stream.fileno())
-        if opened.st_size != before.st_size:
-            raise ValueError("Source changed while opening")
-        total = 0
-        while block := stream.read(min(1024 * 1024, data.MAX_INPUT_BYTES - total + 1)):
-            total += len(block)
-            if total > data.MAX_INPUT_BYTES:
-                raise ValueError("Input exceeds 128 MiB size limit")
-            sha256.update(block)
-            md5.update(block)
-        if signature(os.fstat(stream.fileno())) != signature(opened) or signature(
-            path.stat()
-        ) != signature(before):
-            raise ValueError("Source changed while hashing")
-    return {"source_sha256": sha256.hexdigest(), "source_md5": md5.hexdigest()}
+def _require_unchanged_source(path: Path, original: tuple[int, ...]) -> None:
+    try:
+        current = _source_metadata(path)
+    except FileNotFoundError as error:
+        raise ValueError("Source bytes changed: original input disappeared") from error
+    if current != original:
+        raise ValueError("Source bytes changed: original input metadata differs from acquisition")
 
 
 def _git_commit() -> str | None:
@@ -121,17 +102,17 @@ def run_experiment(
     _positive_integer(max_iter, "max_iter")
     _positive_integer(bootstrap_draws, "bootstrap_draws")
     started = time.perf_counter()
-    source_fingerprints = _source_fingerprints(input_path)
+    original_source = _source_metadata(input_path)
+    full, source_fingerprints = load_source_snapshot(input_path)
+    _require_unchanged_source(input_path, original_source)
     provenance = {
         **source_fingerprints,
+        "source_capture": "bounded_snapshot",
         "source_matches_pinned": source_fingerprints["source_md5"] == SOURCE_MD5,
         "code_sha256": code_fingerprint(),
         "git_commit": _git_commit(),
         "policy_records_redistributed": False,
     }
-    full = load_dataset(input_path)
-    if _source_fingerprints(input_path) != source_fingerprints:
-        raise ValueError("Source bytes changed while loading; choose an immutable input")
     audit = validate_frame(full)
     records = sample_frame(full, max_rows, seed)
     partitions = split_frame(records, seed)
@@ -179,6 +160,7 @@ def run_experiment(
             }
             memberships.append(subset[["IDpol"]].assign(split=name))
         pd.concat(memberships).to_csv(output_dir / "split-membership.csv", index=False)
+        identity = run_identity(provenance, settings, split_summaries)
         fit_started = time.perf_counter()
         with threadpool_limits(limits=2):
             models = fit_models(partitions["train"], seed=seed, max_iter=max_iter)
@@ -197,6 +179,7 @@ def run_experiment(
                 output_dir / "selection.json",
                 {
                     "selected_model": selected,
+                    "run_identity": identity,
                     "selection_split": "validation",
                     "metric": "exposure_weighted_mean_poisson_deviance",
                     "settings": settings,
@@ -222,9 +205,7 @@ def run_experiment(
                 seed,
                 bootstrap_draws,
             )
-        # Never label old in-memory records with fingerprints of a newer file.
-        if _source_fingerprints(input_path) != source_fingerprints:
-            raise ValueError("Source bytes changed during experiment; results are incomplete")
+        _require_unchanged_source(input_path, original_source)
         if code_fingerprint() != provenance["code_sha256"]:
             raise ValueError("Code bytes changed during experiment; results are incomplete")
         local_predictions = partitions["test"][["IDpol", "ClaimNb", "Exposure"]].copy()
@@ -233,6 +214,7 @@ def run_experiment(
         local_predictions.to_csv(output_dir / "predictions.csv", index=False)
         pinned = provenance["source_matches_pinned"]
         results = {
+            "run_identity": identity,
             "study": {
                 "name": "MotorClaimLab",
                 "seed": seed,
