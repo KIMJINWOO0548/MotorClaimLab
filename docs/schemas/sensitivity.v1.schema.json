@@ -1,0 +1,393 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "status",
+    "reason",
+    "baseline",
+    "evaluation",
+    "scenarios"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "motorclaimlab.sensitivity.v1"
+    },
+    "status": {
+      "enum": [
+        "COMPARABLE",
+        "UNAVAILABLE"
+      ]
+    },
+    "reason": {
+      "enum": [
+        null,
+        "BASELINE_INVALID",
+        "SOURCE_MISMATCH",
+        "SPLIT_MISMATCH",
+        "PROTOCOL_MISMATCH",
+        "REPLAY_MISMATCH",
+        "FIT_FAILED",
+        "EVAL_MISMATCH"
+      ]
+    },
+    "baseline": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/baseline"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "evaluation": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/evaluation"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "scenarios": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/scenario"
+      }
+    }
+  },
+  "$defs": {
+    "baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "results_sha256",
+        "selection_sha256",
+        "seed",
+        "code_sha256",
+        "environment_sha256",
+        "config_sha256",
+        "split_sha256",
+        "source_sha256",
+        "data_kind",
+        "protocol_version"
+      ],
+      "properties": {
+        "results_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "selection_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "seed": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "code_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "environment_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "config_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "split_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "source_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "data_kind": {
+          "const": "local_unverified"
+        },
+        "protocol_version": {
+          "const": 1
+        }
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "identity_sha256",
+        "membership_sha256",
+        "outcomes_sha256",
+        "formula_version",
+        "rows",
+        "exposure",
+        "observed_claims"
+      ],
+      "properties": {
+        "identity_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "membership_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "outcomes_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "formula_version": {
+          "const": "frequency-poisson.v1"
+        },
+        "rows": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "exposure": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "observed_claims": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "impact",
+        "selected_model",
+        "validation_deviance",
+        "test"
+      ],
+      "properties": {
+        "name": {
+          "enum": [
+            "baseline",
+            "exposure_cap",
+            "claim_cap",
+            "both_caps"
+          ]
+        },
+        "impact": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "rows",
+            "exposure_affected",
+            "claim_affected",
+            "both_affected",
+            "affected_rows",
+            "exposure_before",
+            "exposure_after",
+            "claims_before",
+            "claims_after"
+          ],
+          "properties": {
+            "rows": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "exposure_affected": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "claim_affected": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "both_affected": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "affected_rows": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "exposure_before": {
+              "type": "number",
+              "minimum": 0
+            },
+            "exposure_after": {
+              "type": "number",
+              "minimum": 0
+            },
+            "claims_before": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "claims_after": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "selected_model": {
+          "enum": [
+            "mean",
+            "poisson_glm",
+            "poisson_hgb"
+          ]
+        },
+        "validation_deviance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mean",
+            "poisson_glm",
+            "poisson_hgb"
+          ],
+          "properties": {
+            "mean": {
+              "type": "number",
+              "minimum": 0
+            },
+            "poisson_glm": {
+              "type": "number",
+              "minimum": 0
+            },
+            "poisson_hgb": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "test": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "predicted_claims",
+            "observed_frequency",
+            "predicted_frequency",
+            "mean_poisson_deviance",
+            "observed_predicted_ratio",
+            "deviance_delta",
+            "ratio_delta"
+          ],
+          "properties": {
+            "predicted_claims": {
+              "type": "number",
+              "minimum": 0
+            },
+            "observed_frequency": {
+              "type": "number",
+              "minimum": 0
+            },
+            "predicted_frequency": {
+              "type": "number",
+              "minimum": 0
+            },
+            "mean_poisson_deviance": {
+              "type": "number",
+              "minimum": 0
+            },
+            "observed_predicted_ratio": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "deviance_delta": {
+              "type": "number"
+            },
+            "ratio_delta": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "if": {
+    "properties": {
+      "status": {
+        "const": "COMPARABLE"
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "reason": {
+        "type": "null"
+      },
+      "baseline": {
+        "$ref": "#/$defs/baseline"
+      },
+      "evaluation": {
+        "$ref": "#/$defs/evaluation"
+      },
+      "scenarios": {
+        "minItems": 4,
+        "items": false,
+        "prefixItems": [
+          {
+            "properties": {
+              "name": {
+                "const": "baseline"
+              }
+            },
+            "$ref": "#/$defs/scenario"
+          },
+          {
+            "properties": {
+              "name": {
+                "const": "exposure_cap"
+              }
+            },
+            "$ref": "#/$defs/scenario"
+          },
+          {
+            "properties": {
+              "name": {
+                "const": "claim_cap"
+              }
+            },
+            "$ref": "#/$defs/scenario"
+          },
+          {
+            "properties": {
+              "name": {
+                "const": "both_caps"
+              }
+            },
+            "$ref": "#/$defs/scenario"
+          }
+        ]
+      }
+    }
+  },
+  "else": {
+    "properties": {
+      "reason": {
+        "enum": [
+          "BASELINE_INVALID",
+          "SOURCE_MISMATCH",
+          "SPLIT_MISMATCH",
+          "PROTOCOL_MISMATCH",
+          "REPLAY_MISMATCH",
+          "FIT_FAILED",
+          "EVAL_MISMATCH"
+        ]
+      },
+      "evaluation": {
+        "type": "null"
+      },
+      "scenarios": {
+        "maxItems": 0
+      }
+    }
+  }
+}

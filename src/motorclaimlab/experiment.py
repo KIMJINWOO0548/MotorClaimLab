@@ -85,6 +85,56 @@ def _positive_integer(value: int, name: str) -> None:
         raise ValueError(f"{name} must be a positive integer")
 
 
+def _split_summary(frame: pd.DataFrame) -> dict:
+    ids = "\n".join(str(int(pid)) for pid in frame.IDpol).encode("ascii")
+    audit = validate_frame(frame)
+    return {
+        "rows": audit["rows"],
+        "claims": audit["claims"],
+        "exposure": audit["exposure"],
+        "membership_sha256": hashlib.sha256(ids).hexdigest(),
+    }
+
+
+def _study_settings(seed: int, max_rows: int | None, max_iter: int, bootstrap_draws: int) -> dict:
+    return {
+        "seed": seed,
+        "max_rows": max_rows,
+        "max_iter": max_iter,
+        "bootstrap_draws": bootstrap_draws,
+        "thread_limit": 2,
+        "split_method": "sha256-policy-id-60-20-20",
+        "test_used_for_selection": False,
+        "glm": {"alpha": 1e-4, "max_iter": 300, "tol": 1e-6},
+        "hgb": {
+            "max_iter": max_iter,
+            "max_leaf_nodes": 15,
+            "min_samples_leaf": 100,
+            "learning_rate": 0.05,
+            "early_stopping": False,
+            "loss": "poisson",
+        },
+    }
+
+
+def _study_environment() -> dict:
+    return {
+        "python": platform.python_version(),
+        "platform": platform.system(),
+        "packages": {
+            name: importlib.metadata.version(name)
+            for name in [
+                "numpy",
+                "pandas",
+                "scipy",
+                "scikit-learn",
+                "matplotlib",
+                "threadpoolctl",
+            ]
+        },
+    }
+
+
 def run_experiment(
     input_path: Path,
     output_dir: Path,
@@ -119,24 +169,7 @@ def run_experiment(
     if any(part.empty for part in partitions.values()):
         raise ValueError("Hash split produced an empty partition; use more source observations")
     output_dir.mkdir(parents=True, exist_ok=False)
-    settings = {
-        "seed": seed,
-        "max_rows": max_rows,
-        "max_iter": max_iter,
-        "bootstrap_draws": bootstrap_draws,
-        "thread_limit": 2,
-        "split_method": "sha256-policy-id-60-20-20",
-        "test_used_for_selection": False,
-        "glm": {"alpha": 1e-4, "max_iter": 300, "tol": 1e-6},
-        "hgb": {
-            "max_iter": max_iter,
-            "max_leaf_nodes": 15,
-            "min_samples_leaf": 100,
-            "learning_rate": 0.05,
-            "early_stopping": False,
-            "loss": "poisson",
-        },
-    }
+    settings = _study_settings(seed, max_rows, max_iter, bootstrap_draws)
     _json(
         output_dir / "execution.json",
         {
@@ -150,14 +183,7 @@ def run_experiment(
         split_summaries = {}
         memberships = []
         for name, subset in partitions.items():
-            ids = "\n".join(str(int(pid)) for pid in subset.IDpol).encode("ascii")
-            subset_audit = validate_frame(subset)
-            split_summaries[name] = {
-                "rows": subset_audit["rows"],
-                "claims": subset_audit["claims"],
-                "exposure": subset_audit["exposure"],
-                "membership_sha256": hashlib.sha256(ids).hexdigest(),
-            }
+            split_summaries[name] = _split_summary(subset)
             memberships.append(subset[["IDpol"]].assign(split=name))
         pd.concat(memberships).to_csv(output_dir / "split-membership.csv", index=False)
         identity = run_identity(provenance, settings, split_summaries)
@@ -233,21 +259,7 @@ def run_experiment(
             "bootstrap": bootstrap,
             "eda": summarize_sql(records),
             "provenance": provenance,
-            "environment": {
-                "python": platform.python_version(),
-                "platform": platform.system(),
-                "packages": {
-                    name: importlib.metadata.version(name)
-                    for name in [
-                        "numpy",
-                        "pandas",
-                        "scipy",
-                        "scikit-learn",
-                        "matplotlib",
-                        "threadpoolctl",
-                    ]
-                },
-            },
+            "environment": _study_environment(),
             "timing": {"fit_seconds": fit_seconds, "total_seconds": time.perf_counter() - started},
             "limitations": LIMITATIONS
             + [
