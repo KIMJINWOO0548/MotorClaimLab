@@ -10,6 +10,7 @@ import pytest
 
 from motorclaimlab.eda import summarize_sql
 from motorclaimlab.experiment import run_experiment
+from motorclaimlab.presentation import render_saved
 
 
 def _study_frame(frame):
@@ -52,6 +53,7 @@ def test_end_to_end_writes_aggregates_and_preserves_source(frame, tmp_path):
         key=lambda name: result["metrics"]["validation"][name]["mean_poisson_deviance"],
     )
     assert result["bootstrap"]["draws"] == 5
+    assert result["bootstrap"]["ci_lower"] is None
     assert json.loads((output / "results.json").read_text()) == result
     for name in [
         "report.html",
@@ -65,6 +67,9 @@ def test_end_to_end_writes_aggregates_and_preserves_source(frame, tmp_path):
     with pytest.raises(FileExistsError):
         run_experiment(source, output, max_iter=3, bootstrap_draws=5)
     assert source.read_bytes() == original
+    manifest = render_saved(output / "results.json", tmp_path / "rerender")
+    assert manifest["saved_contract"] == "matched-run-identity"
+    assert manifest["run_identity"] == result["run_identity"]
 
 
 def test_selection_uses_validation_even_when_test_favors_another_model(

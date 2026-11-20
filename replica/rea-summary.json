@@ -1,0 +1,41 @@
+{
+  "source_url": "https://docs.evidentlyai.com/metrics/preset_regression",
+  "command": "node <local rea 6.8.0 CLI> capture-browser-scenario scenario.json --format json",
+  "exit_code": 0,
+  "top_keys": [
+    "evidence_id",
+    "subject",
+    "provider",
+    "analysis_profile",
+    "predicate_type",
+    "operation",
+    "parameters",
+    "raw_result",
+    "normalized_result",
+    "confidence",
+    "authority",
+    "environment",
+    "limitations",
+    "relationship_coverage",
+    "locations",
+    "evidence_links"
+  ],
+  "browser": {
+    "mode": "launch",
+    "process_ownership": "provider-owned",
+    "cleanup": "terminated-owned-process",
+    "product": "Chromium",
+    "version": "156.0.8078.80"
+  },
+  "status": null,
+  "error": null,
+  "evidence": {
+    "0-accessibility.txt": "7b5316154f5dcc9dc95e164c54fcc06a2a7134960ed027002485ff0557e906be",
+    "0-dom.txt": "bb54f4df4b4263e1302e5a3bbb56763f1bad26f2589dbcc33c8d3ad4b5f92dc0",
+    "0-screenshot.png": "6e6fd3688198eda6128153514402c509b0342d3a0dbff86d1f752becc9dfcb22",
+    "1-accessibility.txt": "7b5316154f5dcc9dc95e164c54fcc06a2a7134960ed027002485ff0557e906be",
+    "1-dom.txt": "bb54f4df4b4263e1302e5a3bbb56763f1bad26f2589dbcc33c8d3ad4b5f92dc0",
+    "1-screenshot.png": "6e6fd3688198eda6128153514402c509b0342d3a0dbff86d1f752becc9dfcb22",
+    "stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MotorClaimLab fixed-holdout training stability v1",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "status", "reason", "protocol", "baseline", "evaluation", "repetitions", "summary"],
+  "properties": {
+    "schema_version": {"const": "motorclaimlab.training-stability.v1"},
+    "status": {"enum": ["COMPARABLE", "UNAVAILABLE"]},
+    "reason": {"enum": [null, "BASELINE_INVALID", "PROTOCOL_MISMATCH", "SOURCE_MISMATCH", "SPLIT_MISMATCH", "REPLAY_MISMATCH", "FIT_FAILED", "EVAL_MISMATCH"]},
+    "protocol": {"$ref": "#/$defs/protocol"},
+    "baseline": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/baseline"}]},
+    "evaluation": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/evaluation"}]},
+    "repetitions": {"type": "array", "items": {"$ref": "#/$defs/repetition"}},
+    "summary": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/summary"}]}
+  },
+  "if": {"properties": {"status": {"const": "COMPARABLE"}}},
+  "then": {"properties": {
+    "reason": {"type": "null"}, "baseline": {"type": "object"}, "evaluation": {"type": "object"},
+    "repetitions": {"minItems": 5, "maxItems": 5}, "summary": {"type": "object"}
+  }},
+  "else": {"properties": {
+    "reason": {"type": "string"}, "evaluation": {"type": "null"}, "repetitions": {"maxItems": 0}, "summary": {"type": "null"}
+  }},
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "model": {"enum": ["mean", "poisson_glm", "poisson_hgb"]},
+    "count": {"type": "integer", "minimum": 0},
+    "positive_count": {"type": "integer", "minimum": 1},
+    "nonnegative": {"type": "number", "minimum": 0},
+    "positive": {"type": "number", "exclusiveMinimum": 0},
+    "protocol": {
+      "type": "object", "additionalProperties": false,
+      "required": ["seeds", "sampler", "sort", "draw", "formula_version"],
+      "properties": {
+        "seeds": {"const": [20261121, 20261122, 20261123, 20261124, 20261125]},
+        "sampler": {"const": "PCG64"}, "sort": {"const": "policy-id-ascending"},
+        "draw": {"const": "with-replacement-original-training-size"}, "formula_version": {"const": "frequency-poisson.v1"}
+      }
+    },
+    "baseline": {
+      "type": "object", "additionalProperties": false,
+      "required": ["results_sha256", "selection_sha256", "seed", "code_sha256", "environment_sha256", "config_sha256", "split_sha256", "source_sha256", "data_kind", "protocol_version", "selected_model"],
+      "properties": {
+        "results_sha256": {"$ref": "#/$defs/hash"}, "selection_sha256": {"$ref": "#/$defs/hash"},
+        "seed": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "code_sha256": {"$ref": "#/$defs/hash"}, "environment_sha256": {"$ref": "#/$defs/hash"},
+        "config_sha256": {"$ref": "#/$defs/hash"}, "split_sha256": {"$ref": "#/$defs/hash"},
+        "source_sha256": {"$ref": "#/$defs/hash"}, "data_kind": {"const": "local_unverified"},
+        "protocol_version": {"const": 1}, "selected_model": {"$ref": "#/$defs/model"}
+      }
+    },
+    "evaluation": {
+      "type": "object", "additionalProperties": false, "required": ["validation", "test"],
+      "properties": {"validation": {"$ref": "#/$defs/heldout"}, "test": {"$ref": "#/$defs/heldout"}}
+    },
+    "heldout": {
+      "type": "object", "additionalProperties": false,
+      "required": ["identity_sha256", "membership_sha256", "outcomes_sha256", "formula_version", "rows", "exposure", "observed_claims"],
+      "properties": {
+        "identity_sha256": {"$ref": "#/$defs/hash"}, "membership_sha256": {"$ref": "#/$defs/hash"},
+        "outcomes_sha256": {"$ref": "#/$defs/hash"}, "formula_version": {"const": "frequency-poisson.v1"},
+        "rows": {"$ref": "#/$defs/positive_count"}, "exposure": {"$ref": "#/$defs/positive"},
+        "observed_claims": {"$ref": "#/$defs/count"}
+      }
+    },
+    "sample": {
+      "type": "object", "additionalProperties": false,
+      "required": ["rows", "unique_policies", "exposure", "observed_claims", "policy_sample_sha256"],
+      "properties": {
+        "rows": {"$ref": "#/$defs/positive_count"}, "unique_policies": {"$ref": "#/$defs/positive_count"},
+        "exposure": {"$ref": "#/$defs/positive"}, "observed_claims": {"$ref": "#/$defs/positive_count"},
+        "policy_sample_sha256": {"$ref": "#/$defs/hash"}
+      }
+    },
+    "metrics": {
+      "type": "object", "additionalProperties": false,
+      "required": ["predicted_claims", "observed_frequency", "predicted_frequency", "mean_poisson_deviance", "observed_predicted_ratio", "deviance_delta", "ratio_delta"],
+      "properties": {
+        "predicted_claims": {"$ref": "#/$defs/nonnegative"}, "observed_frequency": {"$ref": "#/$defs/nonnegative"},
+        "predicted_frequency": {"$ref": "#/$defs/nonnegative"}, "mean_poisson_deviance": {"$ref": "#/$defs/nonnegative"},
+        "observed_predicted_ratio": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/nonnegative"}]},
+        "deviance_delta": {"type": "number"}, "ratio_delta": {"type": ["number", "null"]}
+      }
+    },
+    "repetition": {
+      "type": "object", "additionalProperties": false,
+      "required": ["seed", "sample", "validation_deviance", "selected_model", "test"],
+      "properties": {
+        "seed": {"enum": [20261121, 20261122, 20261123, 20261124, 20261125]},
+        "sample": {"$ref": "#/$defs/sample"}, "selected_model": {"$ref": "#/$defs/model"},
+        "validation_deviance": {
+          "type": "object", "additionalProperties": false, "required": ["mean", "poisson_glm", "poisson_hgb"],
+          "properties": {
+            "mean": {"$ref": "#/$defs/nonnegative"}, "poisson_glm": {"$ref": "#/$defs/nonnegative"}, "poisson_hgb": {"$ref": "#/$defs/nonnegative"}
+          }
+        },
+        "test": {"$ref": "#/$defs/metrics"}
+      }
+    },
+    "summary": {
+      "type": "object", "additionalProperties": false, "required": ["selection_counts", "test_deviance_delta"],
+      "properties": {
+        "selection_counts": {
+          "type": "object", "additionalProperties": false, "required": ["mean", "poisson_glm", "poisson_hgb"],
+          "properties": {
+            "mean": {"$ref": "#/$defs/count"}, "poisson_glm": {"$ref": "#/$defs/count"}, "poisson_hgb": {"$ref": "#/$defs/count"}
+          }
+        },
+        "test_deviance_delta": {
+          "type": "object", "additionalProperties": false, "required": ["minimum", "median", "maximum"],
+          "properties": {"minimum": {"type": "number"}, "median": {"type": "number"}, "maximum": {"type": "number"}}
+        }
+      }
+    }
+  }
+}

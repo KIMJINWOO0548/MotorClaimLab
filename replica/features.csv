@@ -1,0 +1,5 @@
+feature,area,priority,original,clone,notes
+Inspect observed and predicted aggregates beside segment support,segment report,must,yes,yes,Existing counts and rows/exposure preserved; no external dataset used
+Show signed descriptive difference with under and overprediction labels,segment report,must,no,yes,Independent adaptation tested on saved aggregates; no significance or claims decision
+Keep incomplete aggregate direction unavailable,segment report,must,no,yes,Strict numeric finite nonnegative inputs; missing invalid values stay N/A
+Hosted model monitoring and automatic performance thresholds,monitoring,could,yes,skip,Outside offline historical research scope

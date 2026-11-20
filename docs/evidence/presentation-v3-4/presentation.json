@@ -1,0 +1,41 @@
+{
+  "renderer_version": "3.4",
+  "renderer_sha256": "9af1d3376a61c2f8173014445d1698b6908f332d4c8d5b660eb577ff2d0382eb",
+  "renderer_sources": {
+    "src/motorclaimlab/report.py": "d22c7fa840384ff7805370a35a4f276f5fe4498df1b40462809c3794343b9a0a",
+    "src/motorclaimlab/presentation.py": "d21e790dbb625d0f3159c45b69177a43456af77b324e6624f0955f6ce2f88e5c"
+  },
+  "inputs": {
+    "results": {
+      "path": "docs/evidence/benchmark/results.json",
+      "sha256": "3585e11b57460165521a43db7b21d26dd11330c47affcec820c450c0781e1a74"
+    },
+    "selection": {
+      "path": "docs/evidence/benchmark/selection.json",
+      "sha256": "987923727958b7d73fd8a01bb768dce566e58008a01848d2108affdedf6271e2"
+    }
+  },
+  "original_experiment_code_sha256": "d825b99db2e819d31df1e19dc6915d1cb1f95a1c4c8503de8ec36907da7d4e7d",
+  "original_experiment_git_commit": "751e6f760489ead0f88f63cd68fb52abe19b4d4d",
+  "model_execution": false,
+  "values_source": "unchanged saved aggregate results",
+  "generated_at": "2026-11-06T16:09:42.196877+00:00",
+  "environment": {
+    "python": "3.12.10",
+    "platform": "Windows",
+    "matplotlib": "3.11.2",
+    "numpy": "2.5.4",
+    "pillow": "13.0.0"
+  },
+  "artifacts": {
+    "figures/calibration.png": "4ebee96fe642dbe0dd6888fe377db6c17f7c43173291498ff955f1bcb732eb4f",
+    "figures/calibration.svg": "a38cf5510d013af234b3103e0c6e7aafdf37b5ca65bec51accca1a91c9d8ab1d",
+    "figures/model-comparison.png": "bf4927a9b15c32355c14e495492e7a7007bb834653dfdf1ed39a373f0111342a",
+    "figures/model-comparison.svg": "f1bb52dfe0380d0c90c0196445c2daedd6c10cdd2225e19c73f38f7924d852e9",
+    "figures/paired-difference.png": "5dcc2cb004e3b7276792a4b66a15f83f2b732f92376e8a2933d8bffb2d1d05ea",
+    "figures/paired-difference.svg": "5e1ef63cd42e82e2b97ebc51f439d3eae082d3341f24997aba1c37d25122efce",
+    "report.html": "58a2f5f71fc64d6db17ba56f0b3ecb0f349f1ae603c6805a39ebd12f0aecd236",
+    "report.md": "cc36a40c7c07c58ec3bbdad5edfafbf924605d38ed82d00a1b0f86cc3ea424e6"
+  },
+  "browser_validation": "NOT_RUN at generation; browser verification is recorded separately"
+}

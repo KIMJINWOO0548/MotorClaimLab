@@ -1,0 +1,41 @@
+{
+  "renderer_version": "3.3",
+  "renderer_sha256": "3f610dd6f417f92815253e3c4f4674cbd8c0b674ee4d6d7997f0ec2574d16a64",
+  "renderer_sources": {
+    "src/motorclaimlab/report.py": "2bcc4aecc45de04f2afbf6cb79069115a60673f388b99d35cd2d7d48cb0b9764",
+    "src/motorclaimlab/presentation.py": "ab6ecbb992383814e2fc02191f459bc5aef3483aa9a163d3fd87d4508155f72b"
+  },
+  "inputs": {
+    "results": {
+      "path": "docs/evidence/benchmark/results.json",
+      "sha256": "3585e11b57460165521a43db7b21d26dd11330c47affcec820c450c0781e1a74"
+    },
+    "selection": {
+      "path": "docs/evidence/benchmark/selection.json",
+      "sha256": "987923727958b7d73fd8a01bb768dce566e58008a01848d2108affdedf6271e2"
+    }
+  },
+  "original_experiment_code_sha256": "d825b99db2e819d31df1e19dc6915d1cb1f95a1c4c8503de8ec36907da7d4e7d",
+  "original_experiment_git_commit": "751e6f760489ead0f88f63cd68fb52abe19b4d4d",
+  "model_execution": false,
+  "values_source": "unchanged saved aggregate results",
+  "generated_at": "2026-11-06T15:09:02.905896+00:00",
+  "environment": {
+    "python": "3.12.10",
+    "platform": "Windows",
+    "matplotlib": "3.11.2",
+    "numpy": "2.5.4",
+    "pillow": "13.0.0"
+  },
+  "artifacts": {
+    "figures/calibration.png": "4ebee96fe642dbe0dd6888fe377db6c17f7c43173291498ff955f1bcb732eb4f",
+    "figures/calibration.svg": "2e44367d0c7a8caa6df8e3770f8a68c1bea0079e4c06a0f2f85d9dafa0b21522",
+    "figures/model-comparison.png": "bf4927a9b15c32355c14e495492e7a7007bb834653dfdf1ed39a373f0111342a",
+    "figures/model-comparison.svg": "a41551a22498be224180d3a1b8522fa4cf59620ffb7f70f140884c9bea5e9aac",
+    "figures/paired-difference.png": "5dcc2cb004e3b7276792a4b66a15f83f2b732f92376e8a2933d8bffb2d1d05ea",
+    "figures/paired-difference.svg": "325bed0b41e90f5a62739d5a295dafba0ae8d24d5d9d581535b4b8f2adf5ae1a",
+    "report.html": "65aefb641bfe3d4ef4bfa282baa79e1137afbff5d44579651c54982ccd452b5f",
+    "report.md": "e4f53153fd5b0ea1e3533b62f1d492b7944d307ed342e7f443f5e0d127e5e4a1"
+  },
+  "browser_validation": "SKIPPED/DENIED; offline HTML/SVG and Matplotlib outputs only"
+}

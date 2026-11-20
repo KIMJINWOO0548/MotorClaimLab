@@ -27,6 +27,8 @@ jobs:
       MPLBACKEND: Agg
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
@@ -43,7 +45,7 @@ jobs:
       - name: Verify published evidence Git blob hashes
         run: |
           python scripts/check_evidence.py
-          python scripts/check_presentation.py
+          python scripts/check_presentation.py --renderer-ref 6efb433791c012e273ef12a6a6fcb28dfd525b51
       - name: Offline behavior tests
         run: python -m pytest -q
       - name: Build wheel and source distribution

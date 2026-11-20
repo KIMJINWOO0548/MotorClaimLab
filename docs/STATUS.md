@@ -1,5 +1,36 @@
 # Status
 
+## Exposure and source provenance — 2026-11-16 KST
+
+The separate improvement branch covers MC1–MC4 with exposure-specific totals, source capture bound to the model's parsed input, validated saved run/selection pairs, and bootstrap abstention. The Windows synthetic suite passed 257 tests. The frozen benchmark and existing browser artifacts were retained. See [the criterion mapping and verification](EXPOSURE_PROVENANCE_20261116.md) for exact coverage and limits.
+
+## Audit and split-total integrity — 2026-11-09 UTC
+
+Independent change on `improve/exposure-total-integrity-20261109` from accessible
+remote base `69e0e85582530f77a99928beeb2ea09c8576ce3e`. Input audit now keeps
+exact integer claim sums and rejects nonfinite aggregate exposure; split metadata
+reuses the same validated totals. Normal and sampled population meanings, model
+selection, frozen results and renderer/UI are preserved. Inaccessible
+preservation files were not read or restored.
+
+Actual local Linux/Python 3.12.14: baseline **167 passed**, independent new RED
+**8 failed / 2 passed**, affected **53 passed**, full **177 passed**. Lint,
+format, dependency and existing Git-blob/pinned-presentation checks passed.
+See [scope, controller failure and unverified limits](POPULATION_TOTALS_2026-11-09.md)
+and [aggregate-only evidence](evidence/population-totals-20261109/verification.json).
+Commit/push/remote CI remain separate observations. No real-data accuracy or
+full-pipeline arbitrary-precision support is claimed.
+
+## Renderer 3.4 partition investigation — 2026-11-06 UTC
+
+The report now exposes within-dimension cancellation, largest under/over count differences and saved-test support, with native links to all group tables. Invalid/incomplete totals suppress derived findings; overlapping dimensions are never summed. Models, data, split/selection and historical 8.21% model result are unchanged. The fresh-manifest browser-status correction reproduced RED, then **44 affected tests** and the final full suite **167 tests** passed (47.73 s during other host work), with lint/format passing. The new manifest says NOT_RUN at generation rather than inheriting a historical browser denial; browser results are recorded separately.
+
+New saved-aggregate outputs are in [presentation-v3-4](evidence/presentation-v3-4/report.html), with 8 artifact hashes, 2 input hashes and 2 renderer-source hashes verified. All **50 previously tracked evidence files** remain byte-identical, including renderer 3.3. Local cost records (before/intermediate/final) are in [renderer-benchmark.json](evidence/competitive-depth/renderer-benchmark.json); they do not establish a speedup or competitor advantage. Actual Chrome checks passed with JavaScript disabled, native links/disclosures, 390 px layout and no remote requests; desktop/mobile captures were visually inspected. PDF pagination remains unverified. The public Evidently demo attempt failed before initial state capture, so reference workflow/performance remain NOT_RUN/blocked. See [complete scope and validation](COMPETITIVE_DEPTH_20261106.md). Commit/push/remote CI remain coordinator steps until confirmed.
+
+## Renderer 3.3 descriptive error direction — 2026-11-06 UTC
+
+HTML and Markdown segment tables now display signed observed-minus-predicted claim totals and textual direction with the existing support/Sparse context. This is a descriptive rendering of saved aggregates, without refitting or threshold selection. Full suite **152 passed**, new RED→GREEN cases **9**, Ruff lint/format passed. REA captured the public Evidently regression documentation and Replica's scoped matrix was actually executed. See [commands and limitations](REFERENCE_TRANSFER_20261106.md). Existing 41 published evidence files remain unchanged; local browser verification remains unrun under the prior denial. Commit/push/remote CI are pending coordinator finalization.
+
 2026-11-01 KST.
 
 | Item | State | Evidence |
@@ -33,3 +64,37 @@ The explicit user request for a bolder, distinctive UI is implemented in a chart
 The supplied v2 PNG/source review was compared against current v3, then only remaining support/context/exploration gaps were addressed. Exact three-model comparison remains visible; standalone interval names models/95%/fixed conditions, calibration support accompanies the curve, and native disclosures expose the 4/3/6 saved segment groups. Final local suite **112 passed**. [AUDIT_CLOSURE_V3_1.md](AUDIT_CLOSURE_V3_1.md) distinguishes resolved items, actual checks and the still unverified browser/aesthetic boundary. New outputs are in `docs/evidence/presentation-v3-1/`; all prior public evidence is preserved. No new model statistics or retraining occurred.
 
 Implementation `6efb433791c012e273ef12a6a6fcb28dfd525b51` passed actual CI `41228214013` on Windows 3.12 and Linux 3.12/3.13. Original/current Git-blob checks passed; 31 prior public evidence files are byte-identical; isolated wheel execution outside checkout produced the same eight artifacts. Browser/page capture and aesthetic acceptance remain SKIPPED/DENIED and are assigned to the supervisor's screen-control workflow.
+
+## Local cloud regression increment
+
+2026-11-01 UTC, branch `improve/experiment-regression-provenance` from
+`fa7ade7c466a8a3f6ba8b6f2c0d2478121a03a8f`: a reproduced late source-hashing
+provenance defect now fails on source/code changes observed at explicit
+checkpoints. Six synthetic regressions strengthen provenance, train-only fitting,
+validation-before-test selection, repeatability and frozen split membership.
+Local Linux/Python 3.12.14 full suite: **118 passed**; lint, format, dependency,
+build/distribution and existing Git-blob evidence/presentation checks passed.
+All 41 existing evidence files are byte-identical; frozen model results and
+presentations were not regenerated. No full-data rerun, remote CI, push or
+deployment occurred. Browser capture remains unrun under the existing denial.
+See [CLOUD_REGRESSION_VALIDATION.md](CLOUD_REGRESSION_VALIDATION.md) for the
+reproduction commands and checkpoint-detection limits.
+
+## Sampled-population context correction
+
+2026-11-02 UTC, local renderer **3.2** on branch
+`improve/sampled-population-context` from `1bfe1faf`: a synthetic 120-row sample
+has 84.75 exposure-years, but the opening previously paired its row count with
+the full-input 200 years. HTML/Markdown now use consistent saved split totals
+and label the full-input audit separately. Invalid or inconsistent population
+metadata displays N/A; model, split, seed, selection and frozen evaluation
+values are unchanged.
+
+Local verification: **143 full tests / 58 affected tests passed**; lint, format,
+dependency, build/distribution, original evidence and pinned historical renderer
+checks passed. Fresh v3.2 source/artifact manifests were verified on synthetic
+aggregates. Existing 41 evidence files, first delivery package and prior branch
+refs are preserved. Historical v3.1 source validation now explicitly pins its
+original renderer commit; default current-source comparison remains strict.
+No remote CI, push retry, new authentication or deployment occurred. See
+[SAMPLED_POPULATION_VALIDATION.md](SAMPLED_POPULATION_VALIDATION.md).

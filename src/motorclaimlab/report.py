@@ -10,6 +10,7 @@ import json
 import math
 import re
 from io import StringIO
+from numbers import Real
 from pathlib import Path
 from typing import Any
 
@@ -17,7 +18,7 @@ from matplotlib.backends.backend_svg import FigureCanvasSVG
 from matplotlib.figure import Figure
 
 _MODELS = ("mean", "poisson_glm", "poisson_hgb")
-RENDERER_VERSION = "3.1"
+RENDERER_VERSION = "3.5"
 _MODEL_LABELS = {
     "mean": "Training mean",
     "poisson_glm": "Poisson GLM",
@@ -57,6 +58,45 @@ def _e(value: Any) -> str:
     return html.escape(str(value), quote=True)
 
 
+def _study_exposure(results: dict) -> float | None:
+    """Pair study rows only with complete, valid saved split-population totals."""
+    study, splits = results.get("study"), results.get("splits")
+    if not isinstance(study, dict) or not isinstance(splits, dict):
+        return None
+    if set(splits) != {"train", "validation", "test"}:
+        return None
+
+    def positive(value):
+        if isinstance(value, bool) or not isinstance(value, Real):
+            raise ValueError("Expected a numeric aggregate")
+        number = float(value)
+        if not math.isfinite(number) or number <= 0:
+            raise ValueError("Expected a positive finite aggregate")
+        return number
+
+    def row_count(value):
+        number = positive(value)
+        if not number.is_integer() or int(number) != value:
+            raise ValueError("Expected an exact integer row count")
+        return int(number)
+
+    try:
+        study_rows = row_count(study.get("rows"))
+        rows, exposures = [], []
+        for name in ("train", "validation", "test"):
+            split = splits[name]
+            if not isinstance(split, dict):
+                return None
+            rows.append(row_count(split.get("rows")))
+            exposures.append(positive(split.get("exposure")))
+        if sum(rows) != study_rows:
+            return None
+        exposure = math.fsum(exposures)
+        return exposure if math.isfinite(exposure) else None
+    except (TypeError, ValueError, OverflowError):
+        return None
+
+
 def _source_description(results: dict) -> str:
     pinned = (
         results.get("study", {}).get("data_kind") == "openml_pinned"
@@ -67,7 +107,166 @@ def _source_description(results: dict) -> str:
     return "로컬 입력 자료에 대한 실험입니다. 자료의 출처와 실제·합성 여부는 확인하지 않았습니다."
 
 
-def _metric_table(rows: list[tuple[str, dict]], caption: str) -> str:
+def _prediction_direction(metric: dict) -> str:
+    """Describe saved aggregate count differences without imposing a decision threshold."""
+    counts = [metric.get("observed_claims"), metric.get("predicted_claims")]
+    if any(
+        isinstance(value, bool)
+        or not isinstance(value, Real)
+        or not math.isfinite(value)
+        or value < 0
+        for value in counts
+    ):
+        return "판정 불가 · N/A"
+    difference = counts[0] - counts[1]
+    if not math.isfinite(difference):
+        return "판정 불가 · N/A"
+    if difference > 0:
+        return f"과소예측 · +{_number(difference, 2)}"
+    if difference < 0:
+        return f"과대예측 · {_number(difference, 2)}"
+    return "일치 · 0.00"
+
+
+def segment_review(results: dict) -> list[dict]:
+    """Review each saved partition independently; totals do not prove membership.
+
+    Fail closed for incomplete/invalid support, duplicate group names or totals
+    inconsistent with the selected model's saved test metrics. No thresholds,
+    selection changes, causal interpretation or cross-dimension summation.
+    """
+    dimensions: dict[str, list[dict]] = {}
+    for row in results.get("segments", []):
+        dimensions.setdefault(str(row.get("segment", "기록 없음")), []).append(row)
+    target = results.get("metrics", {}).get("test", {}).get(results.get("selected_model"), {})
+    fields = ("rows", "exposure", "observed_claims", "predicted_claims")
+
+    def valid(metric: dict) -> bool:
+        for key in fields:
+            value = metric.get(key)
+            if isinstance(value, bool) or not isinstance(value, Real):
+                return False
+            try:
+                if not math.isfinite(value):
+                    return False
+            except OverflowError:
+                return False
+            if value < 0 or (key in ("rows", "exposure") and value <= 0):
+                return False
+            if key == "rows" and int(value) != value:
+                return False
+        return True
+
+    reviews = []
+    for name, rows in dimensions.items():
+        review = {
+            "dimension": name,
+            "groups": len(rows),
+            "reconciled": False,
+            "rows": None,
+            "exposure": None,
+            "net_gap": None,
+            "absolute_gap": None,
+            "under": None,
+            "over": None,
+        }
+        labels = [row.get("group") for row in rows]
+        if (
+            not valid(target)
+            or not all(valid(row) for row in rows)
+            or not all(isinstance(label, str) and label for label in labels)
+            or len(set(labels)) != len(labels)
+        ):
+            reviews.append(review)
+            continue
+        try:
+            totals = {key: math.fsum(row[key] for row in rows) for key in fields[1:]}
+            totals["rows"] = sum(int(row["rows"]) for row in rows)
+            reconciled = totals["rows"] == target["rows"] and all(
+                math.isclose(totals[key], target[key], rel_tol=1e-9, abs_tol=1e-9)
+                for key in fields[1:]
+            )
+            gaps = [row["observed_claims"] - row["predicted_claims"] for row in rows]
+            absolute = math.fsum(abs(gap) for gap in gaps)
+            net = math.fsum(gaps)
+            if not reconciled or not all(
+                math.isfinite(value) for value in (*totals.values(), absolute, net)
+            ):
+                reviews.append(review)
+                continue
+        except (OverflowError, ValueError):
+            reviews.append(review)
+            continue
+
+        def finding(row: dict, gap: float) -> dict:
+            return {
+                "group": row["group"],
+                "gap": gap,
+                "rows": row["rows"],
+                "exposure": row["exposure"],
+                "exposure_share": row["exposure"] / target["exposure"],
+                "sparse": row.get("sparse") is True,
+            }
+
+        # max/min retain saved order for exact ties; there is no inferred significance.
+        under = max(range(len(rows)), key=lambda index: gaps[index])
+        over = min(range(len(rows)), key=lambda index: gaps[index])
+        review.update(
+            reconciled=True,
+            rows=target["rows"],
+            exposure=target["exposure"],
+            net_gap=net,
+            absolute_gap=absolute,
+            under=finding(rows[under], gaps[under]) if gaps[under] > 0 else None,
+            over=finding(rows[over], gaps[over]) if gaps[over] < 0 else None,
+        )
+        reviews.append(review)
+    return reviews
+
+
+def _finding_text(finding: dict | None) -> str:
+    if finding is None:
+        return "해당 방향 차이 없음"
+    return (
+        f"{finding['group']} · {finding['gap']:+,.2f}건 · {_integer(finding['rows'])} rows · "
+        f"{_number(finding['exposure'], 2)} exposure-years ({finding['exposure_share']:.1%})"
+        + (" · Sparse" if finding["sparse"] else "")
+    )
+
+
+def _segment_review_html(results: dict) -> str:
+    rows = []
+    for index, review in enumerate(segment_review(results)):
+        label = _SEGMENT_LABELS.get(review["dimension"], review["dimension"])
+        heading = (
+            f'<h4><a href="#segment-dimension-{index}">{_e(label)} · '
+            f"{review['groups']}개 집단 상세 표로 이동</a></h4>"
+        )
+        if not review["reconciled"]:
+            body = '<p class="review-unavailable">저장 합계 확인 불가 · N/A. 행·노출·관측/예측 합계 또는 집단 이름을 확인하세요. 합산 차이·노출 비중·최대 차이는 계산하지 않습니다.</p>'
+        else:
+            body = (
+                f'<p class="review-support">저장 합계 일치 · {_integer(review["rows"])} test rows · '
+                f"{_number(review['exposure'], 2)} exposure-years</p>"
+                '<dl class="review-gap"><div><dt>순 차이 · Net group gap</dt>'
+                f"<dd>{review['net_gap']:+,.2f}건</dd></div><div><dt>집단별 절대 차이 합 · Absolute group gap</dt>"
+                f"<dd>{review['absolute_gap']:,.2f}건</dd></div></dl>"
+                f"<p><strong>가장 큰 과소예측</strong> {_e(_finding_text(review['under']))}</p>"
+                f"<p><strong>가장 큰 과대예측</strong> {_e(_finding_text(review['over']))}</p>"
+            )
+        rows.append(f'<article class="segment-review-row">{heading}{body}</article>')
+    return (
+        '<div id="segment-review" class="segment-review"><h3>합계에 가려진 집단 차이 조사</h3>'
+        "<p>각 차원 안에서 관측 − 예측의 순 차이와 절대 차이 합을 함께 보세요. 순 차이가 작아도 반대 방향 차이가 상쇄될 수 있습니다. "
+        "최대 차이는 건수 기준의 탐색 순서이며 위험·공정성·유의성 순위가 아닙니다. 동률은 저장 순서를 따릅니다.</p>"
+        '<p class="muted">노출 비중의 분모는 선택 모델의 저장된 test 노출 합계입니다. 행·노출·관측/예측 건수를 각각 대조합니다. '
+        "합계 일치는 원자료의 중복·누락 검증이 아닙니다. 차원 간 집단은 겹치므로 합산하지 마세요. Sparse는 기존 저장 표시를 유지합니다.</p>"
+        + ("".join(rows) if rows else '<p class="review-unavailable">저장된 집단 없음 · N/A</p>')
+        + "</div>"
+    )
+
+
+def _metric_table(rows: list[tuple[str, dict]], caption: str, *, direction: bool = False) -> str:
     body = "".join(
         "<tr>"
         + f"<th scope='row'>{_e(label + (' · Sparse' if metric.get('sparse') else ''))}</th>"
@@ -77,7 +276,9 @@ def _metric_table(rows: list[tuple[str, dict]], caption: str) -> str:
         + f"<td>{_number(metric.get('weighted_mae'))}</td>"
         + f"<td>{_number(metric.get('observed_claims'), 2)}</td>"
         + f"<td>{_number(metric.get('predicted_claims'), 2)}</td>"
-        + f"<td>{_number(metric.get('observed_predicted_ratio'))}</td></tr>"
+        + f"<td>{_number(metric.get('observed_predicted_ratio'))}</td>"
+        + (f"<td>{_prediction_direction(metric)}</td>" if direction else "")
+        + "</tr>"
         for label, metric in rows
     )
     return (
@@ -86,7 +287,8 @@ def _metric_table(rows: list[tuple[str, dict]], caption: str) -> str:
         "<th scope='col'>Exposure (years)</th><th scope='col'>Poisson deviance</th>"
         "<th scope='col'>Weighted MAE</th><th scope='col'>Observed claims</th>"
         "<th scope='col'>Predicted claims</th><th scope='col'>Observed / predicted</th>"
-        f"</tr></thead><tbody>{body}</tbody></table></div>"
+        + ("<th scope='col'>Observed − predicted (claims)</th>" if direction else "")
+        + f"</tr></thead><tbody>{body}</tbody></table></div>"
     )
 
 
@@ -128,6 +330,8 @@ def _inline_svg(svg: str, key: str, title: str) -> str:
 
 def _interval_values(results: dict):
     boot = results.get("bootstrap", {})
+    if "adequate" in boot and boot["adequate"] is not True:
+        return None
     try:
         raw = [boot[name] for name in ("selected_minus_baseline", "ci_lower", "ci_upper")]
         if any(isinstance(value, bool) for value in raw):
@@ -142,6 +346,32 @@ def _interval_values(results: dict):
         return point, lower, upper
     except (KeyError, TypeError, ValueError):
         return None
+
+
+def _bootstrap_support_text(boot: dict) -> str:
+    if "valid_draws" not in boot:
+        return ""
+    reason = {
+        "insufficient_policies": "테스트 계약이 부족합니다.",
+        "invalid_draws": "계산할 수 없는 재표집 반복이 있습니다.",
+        "insufficient_draws": "유효한 재표집 반복이 부족합니다.",
+        "degenerate_distribution": "재표집 차이 분포에서 사용할 수 있는 구간 폭이 없습니다.",
+    }.get(boot.get("abstention_reason"), "")
+    return (
+        f"유효 반복 {_integer(boot.get('valid_draws'))} / {_integer(boot.get('draws'))}"
+        f" · 최소 {_integer(boot.get('minimum_valid_draws'))}"
+        f" · 최소 테스트 계약 {_integer(boot.get('minimum_policies'))}건"
+        f" · 무효 {_integer(boot.get('invalid_draws'))}"
+        f" · 단일 계약 반복 {_integer(boot.get('degenerate_draws'))}"
+        f" · seed {_e(boot.get('seed', 'N/A'))}. {reason}"
+    ).rstrip()
+
+
+_EXPOSURE_NOTE = (
+    "빈도·보정값·가중 편차·가중 MAE의 분모는 해당 분할 또는 집단의 노출 연수 합계입니다. "
+    "행 수는 표본 크기입니다. 관측/예측 비율의 분모는 예측 청구 건수 합계입니다. "
+    "순보험료: N/A. 이 빈도 자료에는 보험금 액수가 없습니다."
+)
 
 
 def _uncertainty_svg(results: dict, directory: Path | None = None) -> str:
@@ -440,6 +670,8 @@ def render_markdown(results: dict) -> str:
         "",
         f"- Selected model: {_e(results.get('selected_model', 'N/A'))} (selected on {_e(study.get('selection_split', 'N/A'))})",
         f"- Rows: {_integer(study.get('rows'))}; data kind: {_e(study.get('data_kind', 'N/A'))}; seed: {_e(study.get('seed', 'N/A'))}",
+        f"- Study exposure: {_number(_study_exposure(results), 2)} years (saved train/validation/test population).",
+        f"- Full-input audit: {_integer(results.get('audit', {}).get('rows'))} rows; exposure {_number(results.get('audit', {}).get('exposure'), 2)} years.",
         f"- Renderer {RENDERER_VERSION}; source values are saved aggregates; no model execution.",
         "",
         "## Validation and test comparison",
@@ -473,6 +705,9 @@ def render_markdown(results: dict) -> str:
         )
         if results.get("selected_model") == "mean":
             lines.append("기준 모델과 동일한 비교입니다. 개선 효과를 주장하지 않습니다.")
+    support = _bootstrap_support_text(results.get("bootstrap", {}))
+    if support:
+        lines.append(support)
     lines.extend(
         [
             "0은 차이 없음이며 음수는 선택 모델에 유리합니다. 구간은 고정 분할과 frozen fits에 조건부이며 재학습·미래 시점 불확실성을 포함하지 않습니다.",
@@ -481,10 +716,39 @@ def render_markdown(results: dict) -> str:
             "",
             "## Selected-model segments",
             "",
-            "| Segment / group | Rows | Exposure | Poisson deviance | Observed / predicted |",
-            "|---|---:|---:|---:|---:|",
+            "청구 건수의 기술적 차이: 관측 − 예측이 양수면 과소예측, 음수면 과대예측입니다. 인과 설명·보험금 판단·유의성 판정이 아닙니다.",
+            "",
+            "| Segment / group | Rows | Exposure | Poisson deviance | Observed / predicted | Observed − predicted (claims) |",
+            "|---|---:|---:|---:|---:|---|",
         ]
     )
+    review_lines = [
+        "### Segment review — saved test aggregates",
+        "",
+        "Net group gap sums observed minus predicted within one dimension; Absolute group gap sums absolute differences. Opposing errors can cancel.",
+        "Exposure shares use the selected model's saved test exposure. Rows, exposure and observed/predicted totals are checked separately. Matching totals do not prove disjoint/full row membership. Do not add overlapping dimensions. Largest differences are descriptive counts, not risk, significance or fairness ranks; exact ties retain saved order.",
+        "",
+    ]
+    for review in segment_review(results):
+        dimension = _e(review["dimension"]).replace("|", "&#124;").replace("\n", " ")
+        review_lines.append(f"- **{dimension}** ({review['groups']} groups)")
+        if not review["reconciled"]:
+            review_lines.append(
+                "  Saved totals unavailable/inconsistent — N/A; combined gaps, shares and largest differences suppressed."
+            )
+            continue
+        review_lines.extend(
+            [
+                f"  Saved totals consistent: {_integer(review['rows'])} test rows; {_number(review['exposure'], 2)} exposure-years.",
+                f"  Net group gap: {review['net_gap']:+,.2f}; Absolute group gap: {review['absolute_gap']:,.2f} claims.",
+                "  Largest underprediction: "
+                + _e(_finding_text(review["under"])).replace("|", "&#124;").replace("\n", " "),
+                "  Largest overprediction: "
+                + _e(_finding_text(review["over"])).replace("|", "&#124;").replace("\n", " "),
+            ]
+        )
+    # Insert the investigation before, rather than inside, the original Markdown table.
+    lines[-2:-2] = review_lines + [""]
     for row in results.get("segments", []):
         label = f"{row.get('segment', '')}: {row.get('group', '')}"
         if row.get("sparse"):
@@ -492,7 +756,7 @@ def render_markdown(results: dict) -> str:
         label = _e(label).replace("|", "&#124;").replace("\n", " ")
         lines.append(
             f"| {label} | {_integer(row.get('rows'))} | {_number(row.get('exposure'), 2)} | "
-            f"{_number(row.get('mean_poisson_deviance'))} | {_number(row.get('observed_predicted_ratio'))} |"
+            f"{_number(row.get('mean_poisson_deviance'))} | {_number(row.get('observed_predicted_ratio'))} | {_prediction_direction(row)} |"
         )
     lines.extend(
         [
@@ -501,6 +765,7 @@ def render_markdown(results: dict) -> str:
             "",
             "## Limitations",
             "",
+            f"- {_EXPOSURE_NOTE}",
             "- 빈도는 청구 건수 / 관측 노출 연수이며 적합·평가에 노출 가중치를 사용합니다.",
             "- 시간 순서 검증, 현재 국내 보험 적용성 및 업무 효과는 입증하지 않았습니다.",
             "- 내부 AI 보조 검토는 외부 인간·보험계리 전문가 검수가 아닙니다.",
@@ -542,8 +807,9 @@ def _provenance(results: dict) -> str:
     context = {
         "data": {
             key: provenance.get(key)
-            for key in ("source_sha256", "source_md5", "source_matches_pinned")
+            for key in ("source_sha256", "source_md5", "source_matches_pinned", "source_capture")
         },
+        "run_identity": results.get("run_identity"),
         "original_experiment": {key: provenance.get(key) for key in ("code_sha256", "git_commit")},
         "seed": study.get("seed"),
         "selection_split": study.get("selection_split"),
@@ -593,13 +859,15 @@ def _segment_sections(results: dict) -> str:
         name = str(row.get("segment", "기록 없음"))
         dimensions.setdefault(name, []).append((str(row.get("group", "기록 없음")), row))
     return "".join(
-        '<details class="segment-dimension" open><summary>'
+        f'<details class="segment-dimension" open id="segment-dimension-{index}"><summary>'
         + f"{_e(_SEGMENT_LABELS.get(name, name))} · {len(rows)}개 기존 집단</summary>"
         + _metric_table(
-            rows, f"{_SEGMENT_LABELS.get(name, name)} ({name}) · 선택 모델의 저장된 집단별 오차"
+            rows,
+            f"{_SEGMENT_LABELS.get(name, name)} ({name}) · 선택 모델의 저장된 집단별 오차",
+            direction=True,
         )
         + "</details>"
-        for name, rows in dimensions.items()
+        for index, (name, rows) in enumerate(dimensions.items())
     )
 
 
@@ -624,6 +892,9 @@ def render_report(results: dict) -> str:
         )
         if selected == "mean":
             interval_text += "<p>기준 모델과 동일한 비교입니다. 개선 효과를 주장하지 않습니다.</p>"
+    support = _bootstrap_support_text(boot)
+    if support:
+        interval_text += f'<p class="muted">{support}</p>'
     calibration_rows = results.get("calibration", {}).get(selected, [])
     area_rows = "".join(
         f'<tr><th scope="row">{_e(row.get("area", row.get("Area", "")))}</th>'
@@ -688,18 +959,21 @@ figure {{margin:24px 0;}} figcaption {{color:var(--muted); font-size:.87rem; mar
 #limits {{border-top:3px solid var(--ink);}} li {{margin:10px 0; max-width:85ch;}} footer {{font-size:.8rem; padding-top:28px;}}
 @media (max-width:900px) {{.hero-frame {{grid-template-columns:1fr; gap:30px; padding-top:40px;}} .hero-copy>p {{max-width:62ch;}} .hero-plot {{max-width:800px;}} .analysis-pair,.section-intro {{grid-template-columns:1fr; gap:20px;}} .topbar {{align-items:flex-start; flex-direction:column; gap:4px; padding:20px 0 10px;}} h1 {{font-size:clamp(2.3rem,7vw,4rem);}}}}
 @media (max-width:520px) {{.study-hero {{padding:0 18px;}} .wordmark {{font-size:22px;}} nav {{gap:2px 17px; font-size:.8rem;}} .hero-frame {{padding:32px 0; gap:24px;}} .hero-plot figcaption {{padding-left:0;}} .study-context {{gap:8px 18px; font-size:.78rem;}} main {{padding:0 18px 32px;}} section {{padding:34px 0;}} .analysis-pair {{padding:12px; gap:12px;}} .condition-list {{grid-template-columns:1fr; gap:6px;}} .condition-list dd {{margin-bottom:14px;}}}}
+.segment-review {{margin:32px 0; padding:24px 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line);}} .segment-review>h3 {{margin-top:0;}} .segment-review>p {{font-size:.91rem;}} .segment-review-row {{padding:22px 0; border-top:1px solid var(--line);}} .segment-review-row h4 {{margin:0 0 8px; font-size:1rem;}} .segment-review-row p {{font-size:.88rem; margin:8px 0; overflow-wrap:anywhere;}} .review-support {{color:var(--muted);}} .review-gap {{display:grid; grid-template-columns:1fr 1fr; gap:20px; margin:16px 0; font-variant-numeric:tabular-nums;}} .review-gap dt {{font-size:.82rem; color:var(--muted);}} .review-gap dd {{margin:5px 0 0; font-size:1.35rem; font-weight:700;}} .review-unavailable {{color:#684f25;}} .segment-review a:focus-visible {{outline:3px solid var(--accent); outline-offset:5px;}} .segment-dimension:target>summary {{background:#e8edf8; outline:2px solid var(--accent); outline-offset:4px;}} .segment-review ::selection {{background:#ced8fa; color:var(--ink);}}
+@media (max-width:520px) {{.review-gap {{grid-template-columns:1fr; gap:14px;}} .segment-review {{padding:18px 0;}}}}
 @media (prefers-reduced-motion:reduce) {{*,*::before,*::after {{animation:none!important; transition:none!important; scroll-behavior:auto!important;}}}}
 @media print {{body {{background:white; font-size:10pt;}} .skip-link,nav,.hero-action {{display:none;}} .study-hero {{print-color-adjust:exact; -webkit-print-color-adjust:exact;}} .hero-frame {{grid-template-columns:1fr 1fr; padding:24px 0;}} h1 {{font-size:25pt;}} main {{padding:0;}} .analysis-pair,.section-intro {{display:block;}} section {{padding:20px 0;}} .table-wrap {{overflow:visible; border:0;}} table {{min-width:0; font-size:8pt;}} th,td {{padding:5px; white-space:normal;}} details>pre {{display:block;}} figure,tr {{break-inside:avoid;}}}}
 </style></head><body><a class="skip-link" href="#report-content">분석 본문으로 건너뛰기</a>
 <header class="study-hero"><div class="topbar"><div class="wordmark"><span class="lane-mark" aria-hidden="true"><i></i><i></i><i></i></span>MotorClaimLab</div><nav aria-label="보고서 구간"><a href="#selection">모델 비교</a><a href="#uncertainty">불확실성</a><a href="#calibration">보정과 오차</a><a href="#provenance">출처</a></nav></div>
 <div class="hero-frame"><div class="hero-copy"><h1>청구 건수 너머,<br>위험을 읽는 방법.</h1><p>가입 기간이 다른 계약을 어떻게 비교할까요? 노출 기간을 반영한 세 모델의 예측과, 평균 오차 뒤에 남은 과소·과대예측을 살펴봅니다.</p><p>{_e(_source_description(results))} 현재 국내 보험 업무의 적합성 또는 효과를 입증하지 않았습니다.</p><a class="hero-action" href="#selection">세 모델의 결과 비교하기</a></div>
 <figure class="hero-plot">{calibration}<figcaption>예측 순위별 관측(실선·원)과 예측(파선·사각형). 청구 / 노출 연수. 가로축은 시간 흐름이 아닌 예측 순위입니다. <a href="#calibration" style="color:#ff956d">보정 구간의 실제 값 보기</a></figcaption></figure></div>
-<div class="study-context"><span><strong>{_integer(study.get("rows"))}</strong> 계약 행</span><span>노출 <strong>{_number(audit.get("exposure"), 2)}</strong>년</span><span>{"전체 자료 실행" if study.get("sampled") is False else ("표본 실행" if study.get("sampled") is True else "표본 여부 기록 없음")}</span><span>{_e(study.get("data_kind", "기록 없음"))} / seed {_e(study.get("seed", "기록 없음"))}</span></div></header>
+<div class="study-context"><span><strong>{_integer(study.get("rows"))}</strong> 계약 행</span><span>분석 노출 <strong>{_number(_study_exposure(results), 2)}</strong>년</span><span>{"전체 자료 실행" if study.get("sampled") is False else ("표본 실행" if study.get("sampled") is True else "표본 여부 기록 없음")}</span><span>{_e(study.get("data_kind", "기록 없음"))} / seed {_e(study.get("seed", "기록 없음"))}</span></div></header>
 <main id="report-content" tabindex="-1"><section aria-labelledby="selection"><div class="section-intro"><h2 id="selection">어떤 모델이<br>얼마나 덜 틀렸을까?</h2>
 <p>선택 모델: <strong>{_e(_MODEL_LABELS.get(selected, selected))}</strong> (<code>{_e(selected)}</code>). 모델 선택에는 <strong>{_e(study.get("selection_split", "기록 없음"))}</strong> 분할만 사용했습니다. Test results는 선택 이후 평가입니다.</p>
 </div><figure><figcaption>같은 테스트 자료, 같은 노출 가중 기준. 낮은 편차는 이 분할에서 더 작은 예측 오차를 뜻합니다.</figcaption>{comparison}</figure>
 {_comparison_table(results)}
 <p class="muted">편차와 가중 MAE는 낮을수록 작게 틀립니다. 관측/예측 비율 1은 합계 일치이며, 집단별 보정이나 조건검사 통과를 의미하지 않습니다.</p>
+<p class="muted">{_EXPOSURE_NOTE}</p>
 <div class="run-context"><span>Data <code>{_e(source_prefix)}</code></span><span>Analysis code <code>{_e(code_prefix)}</code></span><span>Renderer {RENDERER_VERSION}</span></div>
 {_provenance(results)}
 </section>
@@ -709,9 +983,12 @@ figure {{margin:24px 0;}} figcaption {{color:var(--muted); font-size:.87rem; mar
 {_calibration_table(calibration_rows)}
 <h3>차원별 집단 오차 탐색</h3><p>아래 펼침 항목에서 운전자 연령·차량 연령·지역을 비교하세요. 각 표는 선택 모델 <strong>{_e(_MODEL_LABELS.get(selected, selected))}</strong>의 저장된 집단만 보여줍니다. 행 수·노출량·관측/예측 청구를 함께 읽으며, 교차 집단·다른 모델의 집단별 결과·인과 설명을 뜻하지 않습니다.</p>
 <p>관측/예측 비율이 1보다 크면 이 집단에서 과소예측, 1보다 작으면 과대예측입니다. 비율이 없으면 N/A로 표시합니다. Sparse는 행 수 50개 미만 또는 노출 합계 10년 미만을 뜻합니다. 각 행의 표시는 유지하며, 해당 구간의 불확실성에 주의합니다.</p>
+<p>청구 건수의 기술적 차이: 관측 − 예측이 양수면 과소예측, 음수면 과대예측입니다. 인과 설명·보험금 판단·유의성 판정이 아닙니다. 표시된 두 자리에서 같아 보여도 차이의 부호는 저장된 원래 값에서 계산합니다.</p>
+{_segment_review_html(results)}
 {_segment_sections(results)}</section>
 <section aria-labelledby="conditions"><h2 id="conditions">관측 지표와 기록된 조건의 구분</h2>
 <p>위 숫자는 측정값입니다. 아래는 저장된 메타데이터의 조건 기록이며 승인·규제 적합성 점수로 바꾸지 않습니다.</p>
+<p>전체 입력 감사: {_integer(audit.get("rows"))}행 · 노출 {_number(audit.get("exposure"), 2)}년. 표본 실행에서는 위 분석 대상의 행 수·노출 합계와 구분합니다.</p>
 <dl class="condition-list"><dt>입력 식별</dt><dd>{_e(source_state)}. 원본 권리·수집 경위의 독립 검증과는 별개입니다.</dd>
 <dt>유효 관측 처리</dt><dd>{_e(clipping_state)} · 노출 1년 초과 {_integer(audit.get("exposure_gt_one"))}행 · 청구 4건 초과 {_integer(audit.get("claims_gt_four"))}행.</dd></dl>
 <div class="table-wrap" tabindex="0" role="region" aria-label="Area descriptive values"><table><caption>Descriptive Area aggregates</caption><thead><tr><th scope="col">Area</th><th scope="col">Rows</th><th scope="col">노출 연수</th><th scope="col">관측 청구</th></tr></thead><tbody>{area_rows}</tbody></table></div></section>

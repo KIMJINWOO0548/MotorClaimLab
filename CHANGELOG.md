@@ -1,5 +1,13 @@
 # Changelog
 
+## Renderer 3.3 — 2026-11-06 UTC
+
+- Public Evidently error-analysis guidance informed an independent signed observed-minus-predicted count column in saved segment HTML and Markdown tables.
+- Text distinguishes underprediction, overprediction and equality; invalid or incomplete totals remain unavailable. Rows, exposure and Sparse markers stay alongside the counts.
+- Nine independently failing behavior cases became green; 152 full tests and Ruff lint/format passed. Existing frozen model results and 41 evidence files were preserved. No model fitting, download, claims decision, deployment or browser-validation claim.
+- Replica recon and actual scoped parity execution, plus REA public documentation capture metadata, are recorded in `replica/` and `docs/REFERENCE_TRANSFER_20261106.md`.
+- A separate `docs/evidence/presentation-v3-3/` HTML/Markdown/plot set was derived only from the existing frozen aggregates, with an independently checked input/source/output hash manifest and README link. Historical evidence was not overwritten.
+
 ## Renderer 3.1 — 2026-11-01 KST
 
 - Retains the v3 visual direction; closes concrete v2-source/PNG review items against the current saved-result reading flow.

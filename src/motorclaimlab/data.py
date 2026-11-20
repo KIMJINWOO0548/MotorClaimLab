@@ -5,9 +5,15 @@ from __future__ import annotations
 import gzip
 import hashlib
 import json
+import math
+import os
+import stat
 from datetime import UTC, datetime
-from io import BytesIO
+from io import BytesIO, TextIOWrapper
+from itertools import islice
 from pathlib import Path
+from tempfile import TemporaryFile
+from typing import BinaryIO
 from urllib.request import Request, urlopen
 
 import arff
@@ -19,6 +25,8 @@ DATASET_ID = 41214
 SOURCE_URL = "https://www.openml.org/data/v1/download/20649148/freMTPL2freq.arff"
 SOURCE_MD5 = "f8875568bf0ca622929105197e2db613"
 MAX_DOWNLOAD_BYTES = 128 * 1024 * 1024
+MAX_INPUT_BYTES = 128 * 1024 * 1024
+MAX_INPUT_ROWS = 1_000_000
 COLUMNS = (
     "IDpol",
     "ClaimNb",
@@ -86,17 +94,99 @@ def fetch_dataset(directory: Path) -> Path:
     return target
 
 
+def _source_signature(info: os.stat_result) -> tuple[int, ...]:
+    return (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns)
+
+
+def _capture_source(path: Path, snapshot: BinaryIO) -> dict[str, str]:
+    before = path.stat()
+    if not stat.S_ISREG(before.st_mode):
+        raise ValueError("Source must be a regular file")
+    if before.st_size > MAX_INPUT_BYTES:
+        raise ValueError("Input exceeds 128 MiB size limit")
+
+    sha256 = hashlib.sha256()
+    md5 = hashlib.md5(usedforsecurity=False)
+    total = 0
+    try:
+        with path.open("rb") as source:
+            opened = os.fstat(source.fileno())
+            if not stat.S_ISREG(opened.st_mode) or opened.st_size != before.st_size:
+                raise ValueError("Source changed while opening")
+            if not os.path.samestat(before, opened):
+                if os.name != "nt":
+                    raise ValueError("Source changed while opening")
+                # Windows filesystems can report different identities for paths and handles.
+                with path.open("rb") as current:
+                    if not os.path.samestat(opened, os.fstat(current.fileno())):
+                        raise ValueError("Source changed while opening")
+            while block := source.read(min(1024 * 1024, MAX_INPUT_BYTES - total + 1)):
+                total += len(block)
+                if total > MAX_INPUT_BYTES:
+                    raise ValueError("Input exceeds 128 MiB size limit")
+                snapshot.write(block)
+                sha256.update(block)
+                md5.update(block)
+            if total != opened.st_size or _source_signature(os.fstat(source.fileno())) != (
+                _source_signature(opened)
+            ):
+                raise ValueError("Source changed during snapshot acquisition")
+        if _source_signature(path.stat()) != _source_signature(before):
+            raise ValueError("Source changed during snapshot acquisition")
+    except FileNotFoundError as exc:
+        raise ValueError("Source changed during snapshot acquisition") from exc
+
+    return {"source_sha256": sha256.hexdigest(), "source_md5": md5.hexdigest()}
+
+
+def load_source_snapshot(path: Path) -> tuple[pd.DataFrame, dict[str, str]]:
+    """Acquire a private snapshot, then parse only the bytes hashed during acquisition."""
+    path = Path(path)
+    suffix = path.suffix.lower()
+    if suffix not in (".csv", ".arff"):
+        raise ValueError("Input must be a local .csv or .arff file")
+    with TemporaryFile(mode="w+b") as snapshot:
+        fingerprints = _capture_source(path, snapshot)
+        snapshot.seek(0)
+        return _parse_source(snapshot, suffix), fingerprints
+
+
 def load_dataset(path: Path) -> pd.DataFrame:
     """Read local CSV/ARFF without correcting or rewriting source data."""
-    path = Path(path)
-    if path.suffix.lower() == ".csv":
-        frame = pd.read_csv(path)
-    elif path.suffix.lower() == ".arff":
-        with path.open(encoding="utf-8") as stream:
-            contents = arff.load(stream)
-        frame = pd.DataFrame(contents["data"], columns=[name for name, _ in contents["attributes"]])
+    frame, _ = load_source_snapshot(path)
+    return frame
+
+
+def _parse_source(snapshot: BinaryIO, suffix: str) -> pd.DataFrame:
+    if suffix == ".csv":
+        frame = pd.read_csv(snapshot, nrows=MAX_INPUT_ROWS + 1)
     else:
-        raise ValueError("Input must be a local .csv or .arff file")
+        with TextIOWrapper(snapshot, encoding="utf-8") as stream:
+            contents = arff.load(stream, return_type=arff.DENSE_GEN)
+            columns = [name for name, _ in contents["attributes"]]
+            if len(columns) != len(set(columns)):
+                raise ValueError("Duplicate column names are not allowed")
+            if set(columns) != set(COLUMNS):
+                raise ValueError("Schema mismatch in ARFF header")
+            # Consume the lazy parser while the stream remains open. Never
+            # materialize all Python row lists as well as the full DataFrame.
+            chunks = []
+            count = 0
+            rows = iter(contents["data"])
+            while True:
+                batch = list(islice(rows, min(10_000, MAX_INPUT_ROWS - count + 1)))
+                if not batch:
+                    break
+                count += len(batch)
+                if count > MAX_INPUT_ROWS:
+                    raise ValueError(
+                        "Input exceeds 1,000,000 row limit; no rows are silently dropped"
+                    )
+                chunks.append(pd.DataFrame(batch, columns=columns))
+                del batch
+            frame = (
+                pd.concat(chunks, ignore_index=True) if chunks else pd.DataFrame(columns=columns)
+            )
     validate_frame(frame)
     for name in NUMERIC:
         frame[name] = pd.to_numeric(frame[name], errors="raise")
@@ -107,6 +197,10 @@ def load_dataset(path: Path) -> pd.DataFrame:
 
 def validate_frame(frame: pd.DataFrame) -> dict:
     """Reject invalid observations, retaining valid unusual source values."""
+    if len(frame) > MAX_INPUT_ROWS:
+        raise ValueError("Input exceeds 1,000,000 row limit; no rows are silently dropped")
+    if not frame.columns.is_unique:
+        raise ValueError("Duplicate column names are not allowed")
     missing = sorted(set(COLUMNS) - set(frame.columns))
     extra = sorted(set(frame.columns) - set(COLUMNS))
     if missing or extra:
@@ -145,11 +239,20 @@ def validate_frame(frame: pd.DataFrame) -> dict:
             or values.map(lambda value: not isinstance(value, str) or not value.strip()).any()
         ):
             raise ValueError(f"{name} must contain nonempty text categories")
+    # Each count has been checked as an exactly representable integer. Keep
+    # their sum out of both binary64 rounding and fixed-width integer overflow.
+    claims = sum(int(value) for value in numeric["ClaimNb"])
+    try:
+        exposure = math.fsum(numeric["Exposure"])
+    except OverflowError:
+        raise ValueError("Exposure total must be finite") from None
+    if not math.isfinite(exposure):
+        raise ValueError("Exposure total must be finite")
     return {
         "rows": int(len(frame)),
         "columns": len(frame.columns),
-        "claims": int(numeric["ClaimNb"].sum()),
-        "exposure": float(numeric["Exposure"].sum()),
+        "claims": claims,
+        "exposure": exposure,
         "exposure_gt_one": int((numeric["Exposure"] > 1).sum()),
         "claims_gt_four": int((numeric["ClaimNb"] > 4).sum()),
         "zero_claim_rows": int((numeric["ClaimNb"] == 0).sum()),

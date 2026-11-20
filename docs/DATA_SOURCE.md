@@ -26,3 +26,9 @@ Descriptions disagree on row count (677,991 versus 678,013); every actual run re
 Fields: IDpol, ClaimNb, Exposure, Area, VehPower, VehAge, DrivAge, BonusMalus, VehBrand, VehGas, Density, Region. IDpol is a policy identifier; ClaimNb is the count target; Exposure is the observed duration in years. There is no reliable observation-date column. No chronological validity is claimed.
 
 Unusual positive exposures above one year and high claim counts are retained and counted in the audit. Clipping used by other tutorials is not an authenticated source correction. Nonfinite/zero/negative exposure, invalid count targets, empty categories and duplicate policy identifiers are rejected explicitly.
+
+Local CSV/ARFF admission is limited to 128 MiB before parsing. Duplicate in-memory column names are rejected. This is not a streaming memory guarantee.
+
+Supported source row count is at most 1,000,000. CSV checks at most limit+1 rows and rejects oversized inputs rather than returning a truncated population. ARFF row count is checked while consuming the lazy parser.
+
+ARFF rows are now parsed lazily and converted in 10,000-row chunks, rejecting at limit+1 before full materialization. This is not a constant-memory or RSS guarantee; see ARFF_STREAMING_20261116.md.

@@ -17,15 +17,15 @@ from threadpoolctl import threadpool_limits
 from .data import (
     SEED,
     SOURCE_MD5,
-    load_dataset,
+    load_source_snapshot,
     sample_frame,
-    sha256_file,
     split_frame,
     validate_frame,
 )
 from .eda import summarize_sql
 from .evaluation import calibration_table, evaluate_predictions, paired_bootstrap, segment_table
 from .models import fit_models
+from .saved_contract import run_identity
 
 LIMITATIONS = [
     "No observation-date field: policy holdout is not a temporal validation.",
@@ -51,6 +51,20 @@ def code_fingerprint() -> str:
     return digest.hexdigest()
 
 
+def _source_metadata(path: Path) -> tuple[int, ...]:
+    info = path.stat()
+    return info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns
+
+
+def _require_unchanged_source(path: Path, original: tuple[int, ...]) -> None:
+    try:
+        current = _source_metadata(path)
+    except FileNotFoundError as error:
+        raise ValueError("Source bytes changed: original input disappeared") from error
+    if current != original:
+        raise ValueError("Source bytes changed: original input metadata differs from acquisition")
+
+
 def _git_commit() -> str | None:
     root = Path(__file__).resolve().parents[2]
     if not (root / ".git").exists():
@@ -71,31 +85,19 @@ def _positive_integer(value: int, name: str) -> None:
         raise ValueError(f"{name} must be a positive integer")
 
 
-def run_experiment(
-    input_path: Path,
-    output_dir: Path,
-    seed: int = SEED,
-    max_rows: int | None = None,
-    max_iter: int = 100,
-    bootstrap_draws: int = 200,
-) -> dict:
-    """Run one frozen protocol into a fresh directory, preserving failed runs."""
-    input_path, output_dir = Path(input_path), Path(output_dir)
-    if output_dir.exists():
-        raise FileExistsError("Output directory already exists; choose a fresh run path")
-    if isinstance(seed, bool) or not isinstance(seed, int) or not 0 <= seed < 2**32:
-        raise ValueError("seed must be an integer from 0 to 2**32 - 1")
-    _positive_integer(max_iter, "max_iter")
-    _positive_integer(bootstrap_draws, "bootstrap_draws")
-    started = time.perf_counter()
-    full = load_dataset(input_path)
-    audit = validate_frame(full)
-    records = sample_frame(full, max_rows, seed)
-    partitions = split_frame(records, seed)
-    if any(part.empty for part in partitions.values()):
-        raise ValueError("Hash split produced an empty partition; use more source observations")
-    output_dir.mkdir(parents=True, exist_ok=False)
-    settings = {
+def _split_summary(frame: pd.DataFrame) -> dict:
+    ids = "\n".join(str(int(pid)) for pid in frame.IDpol).encode("ascii")
+    audit = validate_frame(frame)
+    return {
+        "rows": audit["rows"],
+        "claims": audit["claims"],
+        "exposure": audit["exposure"],
+        "membership_sha256": hashlib.sha256(ids).hexdigest(),
+    }
+
+
+def _study_settings(seed: int, max_rows: int | None, max_iter: int, bootstrap_draws: int) -> dict:
+    return {
         "seed": seed,
         "max_rows": max_rows,
         "max_iter": max_iter,
@@ -113,27 +115,78 @@ def run_experiment(
             "loss": "poisson",
         },
     }
+
+
+def _study_environment() -> dict:
+    return {
+        "python": platform.python_version(),
+        "platform": platform.system(),
+        "packages": {
+            name: importlib.metadata.version(name)
+            for name in [
+                "numpy",
+                "pandas",
+                "scipy",
+                "scikit-learn",
+                "matplotlib",
+                "threadpoolctl",
+            ]
+        },
+    }
+
+
+def run_experiment(
+    input_path: Path,
+    output_dir: Path,
+    seed: int = SEED,
+    max_rows: int | None = None,
+    max_iter: int = 100,
+    bootstrap_draws: int = 200,
+) -> dict:
+    """Run one frozen protocol into a fresh directory, preserving failed runs."""
+    input_path, output_dir = Path(input_path), Path(output_dir)
+    if output_dir.exists():
+        raise FileExistsError("Output directory already exists; choose a fresh run path")
+    if isinstance(seed, bool) or not isinstance(seed, int) or not 0 <= seed < 2**32:
+        raise ValueError("seed must be an integer from 0 to 2**32 - 1")
+    _positive_integer(max_iter, "max_iter")
+    _positive_integer(bootstrap_draws, "bootstrap_draws")
+    started = time.perf_counter()
+    original_source = _source_metadata(input_path)
+    full, source_fingerprints = load_source_snapshot(input_path)
+    _require_unchanged_source(input_path, original_source)
+    provenance = {
+        **source_fingerprints,
+        "source_capture": "bounded_snapshot",
+        "source_matches_pinned": source_fingerprints["source_md5"] == SOURCE_MD5,
+        "code_sha256": code_fingerprint(),
+        "git_commit": _git_commit(),
+        "policy_records_redistributed": False,
+    }
+    audit = validate_frame(full)
+    records = sample_frame(full, max_rows, seed)
+    partitions = split_frame(records, seed)
+    if any(part.empty for part in partitions.values()):
+        raise ValueError("Hash split produced an empty partition; use more source observations")
+    output_dir.mkdir(parents=True, exist_ok=False)
+    settings = _study_settings(seed, max_rows, max_iter, bootstrap_draws)
     _json(
         output_dir / "execution.json",
         {
             "status": "running",
             "started_at": datetime.now(UTC).isoformat(),
             "settings": settings,
+            "provenance": provenance,
         },
     )
     try:
         split_summaries = {}
         memberships = []
         for name, subset in partitions.items():
-            ids = "\n".join(str(int(pid)) for pid in subset.IDpol).encode("ascii")
-            split_summaries[name] = {
-                "rows": len(subset),
-                "claims": int(subset.ClaimNb.sum()),
-                "exposure": float(subset.Exposure.sum()),
-                "membership_sha256": hashlib.sha256(ids).hexdigest(),
-            }
+            split_summaries[name] = _split_summary(subset)
             memberships.append(subset[["IDpol"]].assign(split=name))
         pd.concat(memberships).to_csv(output_dir / "split-membership.csv", index=False)
+        identity = run_identity(provenance, settings, split_summaries)
         fit_started = time.perf_counter()
         with threadpool_limits(limits=2):
             models = fit_models(partitions["train"], seed=seed, max_iter=max_iter)
@@ -152,6 +205,7 @@ def run_experiment(
                 output_dir / "selection.json",
                 {
                     "selected_model": selected,
+                    "run_identity": identity,
                     "selection_split": "validation",
                     "metric": "exposure_weighted_mean_poisson_deviance",
                     "settings": settings,
@@ -177,13 +231,16 @@ def run_experiment(
                 seed,
                 bootstrap_draws,
             )
+        _require_unchanged_source(input_path, original_source)
+        if code_fingerprint() != provenance["code_sha256"]:
+            raise ValueError("Code bytes changed during experiment; results are incomplete")
         local_predictions = partitions["test"][["IDpol", "ClaimNb", "Exposure"]].copy()
         for name, prediction in test_predictions.items():
             local_predictions[name] = prediction
         local_predictions.to_csv(output_dir / "predictions.csv", index=False)
-        source_md5 = hashlib.md5(input_path.read_bytes(), usedforsecurity=False).hexdigest()
-        pinned = source_md5 == SOURCE_MD5
+        pinned = provenance["source_matches_pinned"]
         results = {
+            "run_identity": identity,
             "study": {
                 "name": "MotorClaimLab",
                 "seed": seed,
@@ -201,29 +258,8 @@ def run_experiment(
             "segments": segments,
             "bootstrap": bootstrap,
             "eda": summarize_sql(records),
-            "provenance": {
-                "source_sha256": sha256_file(input_path),
-                "source_md5": source_md5,
-                "source_matches_pinned": pinned,
-                "code_sha256": code_fingerprint(),
-                "git_commit": _git_commit(),
-                "policy_records_redistributed": False,
-            },
-            "environment": {
-                "python": platform.python_version(),
-                "platform": platform.system(),
-                "packages": {
-                    name: importlib.metadata.version(name)
-                    for name in [
-                        "numpy",
-                        "pandas",
-                        "scipy",
-                        "scikit-learn",
-                        "matplotlib",
-                        "threadpoolctl",
-                    ]
-                },
-            },
+            "provenance": provenance,
+            "environment": _study_environment(),
             "timing": {"fit_seconds": fit_seconds, "total_seconds": time.perf_counter() - started},
             "limitations": LIMITATIONS
             + [
@@ -246,6 +282,7 @@ def run_experiment(
                 "exit_code": 0,
                 "completed_at": datetime.now(UTC).isoformat(),
                 "settings": settings,
+                "provenance": provenance,
             },
         )
         return results
@@ -258,6 +295,7 @@ def run_experiment(
                 "error_type": type(error).__name__,
                 "error": str(error),
                 "settings": settings,
+                "provenance": provenance,
             },
         )
         raise

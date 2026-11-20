@@ -16,10 +16,7 @@ from .report import (
     write_figures,
     write_uncertainty,
 )
-
-
-def _sha(content: bytes) -> str:
-    return hashlib.sha256(content).hexdigest()
+from .saved_contract import FROZEN_RESULTS, FROZEN_SELECTION, load_saved, sha256, validate_run
 
 
 def _input_record(path: Path, content: bytes) -> dict:
@@ -27,14 +24,14 @@ def _input_record(path: Path, content: bytes) -> dict:
         reference = path.resolve().relative_to(Path.cwd().resolve()).as_posix()
     except ValueError:
         reference = path.name
-    return {"path": reference, "sha256": _sha(content)}
+    return {"path": reference, "sha256": sha256(content)}
 
 
 def renderer_sources() -> dict:
     directory = Path(__file__).parent
     return {
-        f"src/motorclaimlab/{name}": _sha((directory / name).read_bytes())
-        for name in ("report.py", "presentation.py")
+        f"src/motorclaimlab/{name}": sha256((directory / name).read_bytes())
+        for name in ("report.py", "presentation.py", "saved_contract.py")
     }
 
 
@@ -44,26 +41,26 @@ def render_saved(results_path: Path, output_dir: Path, selection_path: Path | No
     if output_dir.exists():
         raise FileExistsError("Presentation output already exists; choose a fresh directory")
     source = results_path.read_bytes()
-    results = json.loads(source)
-    if not isinstance(results, dict) or any(
-        name not in results for name in ("study", "metrics", "provenance", "selected_model")
-    ):
-        raise ValueError("Saved results must contain study, metrics, provenance and selected_model")
+    results = load_saved(source)
     inputs = {"results": _input_record(results_path, source)}
+    frozen = inputs["results"]["sha256"] == FROZEN_RESULTS
+    if selection_path is None:
+        sibling = results_path.with_name("selection.json")
+        if sibling.exists():
+            selection_path = sibling
+        elif not frozen:
+            raise ValueError("Saved selection is required for this results file")
     if selection_path is not None:
         selection_path = Path(selection_path)
         selection_source = selection_path.read_bytes()
-        selection = json.loads(selection_source)
-        if (
-            not isinstance(selection, dict)
-            or selection.get("selected_model") != results["selected_model"]
-        ):
-            raise ValueError("Saved selection does not match results")
-        if "validation" in selection and selection["validation"] != results["metrics"].get(
-            "validation"
-        ):
-            raise ValueError("Saved selection validation metrics do not match results")
+        selection = load_saved(selection_source)
         inputs["selection"] = _input_record(selection_path, selection_source)
+    if frozen:
+        if selection_path is not None and inputs["selection"]["sha256"] != FROZEN_SELECTION:
+            raise ValueError("Saved selection does not match the frozen benchmark")
+        identity = None
+    else:
+        identity = validate_run(results, selection)
     sources = renderer_sources()
     digest = hashlib.sha256()
     for name in sorted(sources):
@@ -78,6 +75,7 @@ def render_saved(results_path: Path, output_dir: Path, selection_path: Path | No
         "renderer_sha256": digest.hexdigest(),
         "renderer_sources": sources,
         "inputs": inputs,
+        "saved_contract": "frozen-legacy" if frozen else "matched-run-identity",
         "original_experiment_code_sha256": results["provenance"].get("code_sha256"),
         "original_experiment_git_commit": results["provenance"].get("git_commit"),
         "model_execution": False,
@@ -91,12 +89,16 @@ def render_saved(results_path: Path, output_dir: Path, selection_path: Path | No
             "pillow": importlib.metadata.version("Pillow"),
         },
         "artifacts": {
-            path.relative_to(output_dir).as_posix(): _sha(path.read_bytes())
+            path.relative_to(output_dir).as_posix(): sha256(path.read_bytes())
             for path in sorted(output_dir.rglob("*"))
             if path.is_file()
         },
-        "browser_validation": "SKIPPED/DENIED; offline HTML/SVG and Matplotlib outputs only",
+        "browser_validation": (
+            "NOT_RUN at generation; browser verification is recorded separately"
+        ),
     }
+    if identity is not None:
+        manifest["run_identity"] = identity
     (output_dir / "presentation.json").write_bytes(
         (json.dumps(manifest, ensure_ascii=False, indent=2, allow_nan=False) + "\n").encode("utf-8")
     )

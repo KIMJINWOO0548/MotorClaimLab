@@ -1,0 +1,10 @@
+{
+  "tool": "REA 6.8.0",
+  "actual_execution": true,
+  "source_url": "https://demo.evidentlyai.com",
+  "exit_code": 1,
+  "summary_sha256": "19f75cb9e2c7e7f8c4ef9b44ab37252f482247d44ef4edc41dc6abf2529da3a5",
+  "limitations": "REA exit1/non-retryable execution_failure: navigation failed before initial state capture. No public report UI observed; reference workflow and performance NOT_RUN/blocked. No unchanged retry.",
+  "third_party_assets_shipped": false,
+  "competitor_performance": "NOT_RUN"
+}

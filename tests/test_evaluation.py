@@ -26,6 +26,8 @@ def test_frequency_metrics_use_exposure_not_counts(frame):
             "mean_poisson_deviance": (0.5 + 4 - 4 * math.log(2)) / 2.5,
             "weighted_mae": (0.25 + 2) / 2.5,
             "observed_claims": 2,
+            "observed_frequency": 2 / 2.5,
+            "predicted_frequency": 4.25 / 2.5,
             "predicted_claims": 4.25,
             "observed_predicted_ratio": 2 / 4.25,
         }
@@ -122,18 +124,59 @@ def test_bootstrap_same_policy_pairing_and_deterministic_interval(frame):
     data["Exposure"] = [1, 2]
     # Per-policy deviance differences are -2 and +2. Mixed sample gives 2/3.
     result = paired_bootstrap(data, [1, 2], [2, 1], seed=19, draws=200)
-    assert result == pytest.approx(
-        {"selected_minus_baseline": 2 / 3, "ci_lower": -2, "ci_upper": 2, "seed": 19, "draws": 200}
-    )
+    assert result["selected_minus_baseline"] == pytest.approx(2 / 3)
+    assert (result["ci_lower"], result["ci_upper"]) == (-2, 2)
+    assert result["draws"] == result["valid_draws"] == 200
+    assert result["seed"] == 19
+    assert result["invalid_draws"] == 0
+    assert result["confidence_level"] == 0.95
+    assert result["adequate"] is True
+    assert result["abstention_reason"] is None
     assert result == paired_bootstrap(data, [1, 2], [2, 1], seed=19, draws=200)
-    # PCG64(19) pairs are [1,0], [0,1], [0,0]. Sorted differences
-    # [-2, 2/3, 2/3] give linear percentile endpoints -28/15 and 2/3.
     short = paired_bootstrap(data, [1, 2], [2, 1], seed=19, draws=3)
-    assert short["ci_lower"] == pytest.approx(-28 / 15)
-    assert short["ci_upper"] == pytest.approx(2 / 3)
+    assert short["valid_draws"] == 3
+    assert short["degenerate_draws"] == 1
+    assert short["adequate"] is False
+    assert short["abstention_reason"] == "insufficient_draws"
+    assert short["ci_lower"] is short["ci_upper"] is None
     identical = paired_bootstrap(frame, [1] * 6, [1] * 6)
     assert identical["selected_minus_baseline"] == 0
-    assert identical["ci_lower"] == identical["ci_upper"] == 0
+    assert identical["abstention_reason"] == "degenerate_distribution"
+    assert identical["ci_lower"] is identical["ci_upper"] is None
+
+
+def test_bootstrap_percentiles_match_independent_exposure_arithmetic(frame):
+    data = frame.iloc[:2].copy()
+    data["ClaimNb"] = [1, 2]
+    data["Exposure"] = [0.5, 3]
+    selected, baseline = (1.0, 2.0), (3.0, 1.0)
+    generator = np.random.Generator(np.random.PCG64(13))
+    differences = []
+    for _ in range(81):
+        indices = generator.integers(0, 2, size=2)
+        numerator = sum(
+            2
+            * (
+                data["ClaimNb"].iloc[i] * math.log(baseline[i] / selected[i])
+                + data["Exposure"].iloc[i] * (selected[i] - baseline[i])
+            )
+            for i in indices
+        )
+        differences.append(numerator / sum(data["Exposure"].iloc[i] for i in indices))
+    result = paired_bootstrap(data, selected, baseline, seed=13, draws=81)
+    ordered = sorted(differences)
+    assert result["ci_lower"] == pytest.approx(ordered[2])
+    assert result["ci_upper"] == pytest.approx(ordered[-3])
+    assert result["degenerate_draws"] == sum(
+        difference in (ordered[0], ordered[-1]) for difference in differences
+    )
+
+
+def test_single_policy_bootstrap_abstains(frame):
+    result = paired_bootstrap(frame.iloc[[0]], [1], [3], draws=40)
+    assert result["abstention_reason"] == "insufficient_policies"
+    assert result["degenerate_draws"] == result["valid_draws"] == 40
+    assert result["ci_lower"] is result["ci_upper"] is None
 
 
 @pytest.mark.parametrize("draws", [0, -1, 1.5, True])
@@ -150,3 +193,15 @@ def test_bootstrap_validates_both_models(frame):
 def test_short_high_exposure_segments_are_still_sparse(frame):
     frame["Exposure"] = 20
     assert all(row["sparse"] for row in segment_table(frame, [1] * 6))
+
+
+def test_bootstrap_rejects_nonfinite_replicate_denominator(frame):
+    data = frame.iloc[:2].copy()
+    data["ClaimNb"] = 0
+    data["Exposure"] = [1e308, 0.5]
+    result = paired_bootstrap(data, [0.5, 0.5], [0.25, 0.25], seed=19, draws=40)
+    assert result["selected_minus_baseline"] == 0.5
+    assert 0 < result["invalid_draws"] < result["draws"]
+    assert result["valid_draws"] + result["invalid_draws"] == result["draws"]
+    assert result["abstention_reason"] == "invalid_draws"
+    assert result["ci_lower"] is result["ci_upper"] is None

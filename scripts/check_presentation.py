@@ -3,6 +3,8 @@
 import argparse
 import hashlib
 import json
+import os
+import re
 import subprocess
 from pathlib import PurePosixPath
 
@@ -10,9 +12,29 @@ BASE = "docs/evidence/presentation-v3-1/"
 SOURCES = {"src/motorclaimlab/report.py", "src/motorclaimlab/presentation.py"}
 
 
+def _renderer_commit(value):
+    if not re.fullmatch(r"[0-9a-f]{40}", value):
+        raise argparse.ArgumentTypeError("renderer-ref must be an existing full commit SHA")
+    command = subprocess.run(
+        ["git", "cat-file", "-t", value],
+        capture_output=True,
+        text=True,
+        check=False,
+        env={**os.environ, "GIT_NO_LAZY_FETCH": "1"},
+    )
+    if command.returncode or command.stdout.strip() != "commit":
+        raise argparse.ArgumentTypeError("renderer-ref must be an existing full commit SHA")
+    return value
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--staged", action="store_true", help="Check index before publication")
+    parser.add_argument(
+        "--renderer-ref",
+        type=_renderer_commit,
+        help="Existing full commit SHA for historical renderer sources only; never fetches",
+    )
     args = parser.parse_args()
     prefix = ":" if args.staged else "HEAD:"
 
@@ -22,6 +44,11 @@ def main():
             raise ValueError(f"Unexpected presentation path: {path}")
         if not (path.startswith("docs/evidence/") or path in SOURCES):
             raise ValueError(f"Unexpected presentation path: {path}")
+        if args.renderer_ref and path in SOURCES:
+            return subprocess.check_output(
+                ["git", "show", args.renderer_ref + ":" + path],
+                env={**os.environ, "GIT_NO_LAZY_FETCH": "1"},
+            )
         return subprocess.check_output(["git", "show", prefix + path])
 
     manifest = json.loads(blob(BASE + "presentation.json"))
@@ -59,6 +86,7 @@ def main():
     print(
         f"PASS presentation {manifest['renderer_version']}: 2 frozen inputs, "
         f"2 renderer sources, {len(manifest['artifacts'])} derived artifacts"
+        + (f"; renderer source commit {args.renderer_ref}" if args.renderer_ref else "")
     )
 
 

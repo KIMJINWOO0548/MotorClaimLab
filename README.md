@@ -1,10 +1,16 @@
 # MotorClaimLab
 
+2026-11-16 개선본은 학습 파일을 읽는 바이트와 해시를 결합하고, 새 저장 결과를 선택 기록과 대조합니다. 지표별 노출량 분모와 bootstrap 구간을 보류하는 조건은 [개선본 검증 기록](docs/EXPOSURE_PROVENANCE_20261116.md)에 정리했습니다.
+
+Renderer 3.4 adds a partition review index: net versus absolute group gaps, largest under/over differences, support shares and fail-closed saved-total reconciliation. [Read the new frozen-aggregate report](docs/evidence/presentation-v3-4/report.html) and [validation/measurement limits](docs/COMPETITIVE_DEPTH_20261106.md). Historical model results are unchanged.
+
 **자동차보험 청구 빈도를 분석하고 모델의 오차와 한계를 설명하는 재현 가능한 연구 프로젝트.**
 
 보험 가입 기간이 다른 계약을 공정하게 비교하면서, 단순 평균·포아송 회귀·부스팅 모델의 예측과 집단별 과소·과대예측을 평가합니다. 채용 포트폴리오를 위한 개인 프로젝트이며 KB손해보험 또는 다른 보험사의 의뢰·검증·운영 시스템이 아닙니다.
 
-현재 단계: **전체 678,013행의 동결 실험과 renderer 3.1**. 로컬 전체 **112개 테스트**와 [실제 Windows·Linux CI 3개 작업](https://github.com/KIMJINWOO0548/MotorClaimLab/actions/runs/41228214013)이 통과했습니다. 검증 분할에서 선택한 부스팅 모델의 테스트 포아송 편차가 평균 기준 모델 대비 **8.21% 낮았습니다**. 과거 프랑스 자료의 고정 분할 결과이며 업무 효과를 주장하지 않습니다.
+현재 단계: **전체 678,013행의 동결 실험을 보존한 renderer 3.4**. 새 증분의 로컬 전체 **167개 테스트**와 lint/format이 통과했습니다. [명령·한계와 공개 제품 적용 근거](docs/COMPETITIVE_DEPTH_20261106.md)를 확인하세요. 이전 renderer 3.1의 [실제 Windows·Linux CI 3개 작업](https://github.com/KIMJINWOO0548/MotorClaimLab/actions/runs/41228214013)은 역사적 증거이며 새 증분의 원격 CI는 최종 작업 기록에서 구분합니다. 검증 분할에서 선택한 부스팅 모델의 테스트 포아송 편차가 평균 기준 모델 대비 **8.21% 낮았습니다**. 과거 프랑스 자료의 고정 분할 결과이며 업무 효과를 주장하지 않습니다.
+
+[현재 renderer 3.4 HTML](docs/evidence/presentation-v3-4/report.html)은 집단별로 관측 − 예측 청구 건수와 과소/과대예측 방향을 같은 행의 표본·노출량과 함께 보여 줍니다. 기존에 저장된 집계만 다시 표현했으며 새로운 모델 적합이나 평가를 하지 않았습니다. [별도 입력·소스·산출물 manifest](docs/evidence/presentation-v3-4/presentation.json)는 이전 버전의 원본을 덮어쓰지 않습니다.
 
 새 [presentation v3.1 HTML](docs/evidence/presentation-v3-1/report.html)은 자동차 계기의 선명한 대비를 참고한 첫 화면, 실제 보정 곡선 옆의 표본·노출량, 세 모델 비교와 13개 집단의 차원별 탐색을 제공합니다. 구간 그림에는 비교 모델명·95% 수준·고정 조건을 명시했습니다. [시각 참고 기록](docs/UI_VISUAL_REFERENCES.md), [구체 감사 항목의 대조·보완](docs/AUDIT_CLOSURE_V3_1.md)을 확인하세요. MLflow·Evidently·scikit-learn에서 채택한 분석 보고서 패턴은 [기존 적용 기록](docs/REFERENCE_ADOPTION.md)에 있습니다. 재학습 없이 같은 결과 JSON에서 파생했으며 [renderer·입력·출력 해시](docs/evidence/presentation-v3-1/presentation.json)로 추적합니다. 원래 10개 실험 증거와 예상 해시, 이전 v2·v3는 보존했습니다.
 
@@ -67,14 +73,14 @@ OpenML 원본 **678,013행·12열**, 청구 **36,102건**, 노출 합계 **358,4
 .\.venv\Scripts\python.exe -m build --no-isolation
 .\.venv\Scripts\python.exe scripts/check_distribution.py
 .\.venv\Scripts\python.exe scripts/check_evidence.py
-.\.venv\Scripts\python.exe scripts/check_presentation.py
+.\.venv\Scripts\python.exe scripts/check_presentation.py --renderer-ref 6efb433791c012e273ef12a6a6fcb28dfd525b51
 ```
 
 자동 테스트는 직접 작성한 합성 자료로 실행하며 네트워크를 사용하지 않습니다. 실제 공개 자료 실험과 별도입니다. 브라우저 접근은 URL 정책으로 차단되어 실제 브라우저 접근성 검사는 미실행입니다. 다른 서버나 브라우저 경로로 우회하지 않았습니다.
 
 `check_evidence.py`는 Git 체크아웃에서 실행하며 실제 Git blob과 공개 증거의 SHA-256을 대조합니다. 이 검사는 바이트 일치만 확인하며 자료 권리·저자·과학적 타당성을 인증하지 않습니다.
 
-`check_presentation.py`는 현재 v3.1 표현의 동결 입력·renderer 소스·산출물을 별도로 대조합니다. [표현 개선 설계](docs/PRESENTATION_V3.md)와 [읽기 동선의 보완](docs/AUDIT_CLOSURE_V3_1.md)은 기존 실험의 모델 선택·평가와 구분됩니다. 이전 v2·v3는 원래 manifest와 Git 이력으로 보존합니다.
+`check_presentation.py`는 보존된 v3.1 표현의 동결 입력·산출물을 현재 Git blob과, renderer 소스는 명시한 당시 커밋과 대조합니다. `--renderer-ref`를 생략하면 현재 소스를 엄격히 대조하므로 v3.2 소스와 기존 v3.1 manifest의 조합은 실패합니다. 전체 Git 이력이 필요하며 검사기는 자동 fetch를 하지 않습니다. 현재 renderer 3.2의 표본 노출 표시와 별도 manifest 검증은 [SAMPLED_POPULATION_VALIDATION.md](docs/SAMPLED_POPULATION_VALIDATION.md)에 기록합니다. [표현 개선 설계](docs/PRESENTATION_V3.md)와 [읽기 동선의 보완](docs/AUDIT_CLOSURE_V3_1.md)은 기존 실험의 모델 선택·평가와 구분됩니다. 이전 v2·v3·v3.1 산출물과 manifest는 보존합니다.
 
 ## 연구 경계
 

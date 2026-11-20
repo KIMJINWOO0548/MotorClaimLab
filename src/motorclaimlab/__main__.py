@@ -17,8 +17,25 @@ def main(argv=None) -> int:
         "render", help="Derive a presentation from frozen aggregate results"
     )
     render.add_argument("--results", type=Path, required=True)
-    render.add_argument("--selection", type=Path)
+    render.add_argument(
+        "--selection", type=Path, help="Selection record (defaults to sibling selection.json)"
+    )
     render.add_argument("--output", type=Path, required=True)
+    sensitivity = commands.add_parser(
+        "sensitivity", help="Compare training caps on operator-confirmed synthetic input"
+    )
+    stability = commands.add_parser(
+        "training-stability", help="Resample synthetic training with fixed validation and test data"
+    )
+    stability.add_argument(
+        "--synthetic",
+        action="store_true",
+        required=True,
+        help="Confirm that the local input was independently generated as synthetic",
+    )
+    for command in (sensitivity, stability):
+        for field in ("input", "results", "selection", "output"):
+            command.add_argument(f"--{field}", type=Path, required=True)
     run = commands.add_parser("run", help="Run frozen study and create a standalone report")
     run.add_argument("--input", type=Path, required=True)
     run.add_argument("--output", type=Path, required=True)
@@ -45,6 +62,18 @@ def main(argv=None) -> int:
                     indent=2,
                 )
             )
+        elif args.command == "sensitivity":
+            from .sensitivity import run_sensitivity
+
+            report = run_sensitivity(args.input, args.results, args.selection, args.output)
+            print(report["status"], report["reason"] or "")
+            return 0 if report["status"] == "COMPARABLE" else 1
+        elif args.command == "training-stability":
+            from .training_stability import run_training_stability
+
+            report = run_training_stability(args.input, args.results, args.selection, args.output)
+            print(report["status"], report["reason"] or "")
+            return 0 if report["status"] == "COMPARABLE" else 1
         else:
             from .experiment import run_experiment
 
@@ -69,7 +98,12 @@ def main(argv=None) -> int:
             )
         return 0
     except (ValueError, OSError, RuntimeError) as error:
-        print(f"MotorClaimLab: {error}", file=sys.stderr)
+        messages = {
+            "sensitivity": "Sensitivity could not write or complete the local report.",
+            "training-stability": "Could not complete the local training-stability report.",
+        }
+        message = messages.get(args.command, f"MotorClaimLab: {error}")
+        print(message, file=sys.stderr)
         return 1
 
 
