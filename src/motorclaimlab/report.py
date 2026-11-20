@@ -18,13 +18,15 @@ from matplotlib.backends.backend_svg import FigureCanvasSVG
 from matplotlib.figure import Figure
 
 _MODELS = ("mean", "poisson_glm", "poisson_hgb")
-RENDERER_VERSION = "3.5"
+RENDERER_VERSION = "3.6"
 _MODEL_LABELS = {
     "mean": "Training mean",
     "poisson_glm": "Poisson GLM",
     "poisson_hgb": "Poisson HGB",
 }
 _SEGMENT_LABELS = {"DrivAge": "운전자 연령", "VehAge": "차량 연령", "Area": "지역"}
+_SPLIT_LABELS = {"train": "학습", "validation": "모델 선택 · 검증", "test": "고정 평가 · 테스트"}
+_SPLIT_UNAVAILABLE = "분할별 분석 범위 확인 불가. 저장된 계약 행 수와 노출 연수를 확인하세요."
 
 
 def write_uncertainty(results: dict, directory: Path) -> Path:
@@ -689,6 +691,16 @@ def render_markdown(results: dict) -> str:
             f"{_number(test.get('observed_claims'), 2)} | {_number(test.get('predicted_claims'), 2)} | "
             f"{_number(test.get('observed_predicted_ratio'))} |"
         )
+    lines.extend(["", "### 분할별 분석 범위", ""])
+    if _study_exposure(results) is None:
+        lines.append(_SPLIT_UNAVAILABLE)
+    else:
+        lines.extend(["| 분할 | 계약 행 | 노출 연수 |", "|---|---:|---:|"])
+        for name, label in _SPLIT_LABELS.items():
+            split = results["splits"][name]
+            lines.append(
+                f"| {label} | {_integer(split['rows'])} | {_number(split['exposure'], 2)} |"
+            )
     lines.extend(["", "## Paired uncertainty", ""])
     values = _interval_values(results)
     if values is None:
@@ -802,6 +814,26 @@ def _comparison_table(results: dict) -> str:
     )
 
 
+def _comparison_population(results: dict) -> str:
+    if _study_exposure(results) is None:
+        body = f'<p class="notice">{_SPLIT_UNAVAILABLE}</p>'
+    else:
+        body = (
+            '<dl class="split-population">'
+            + "".join(
+                f"<div><dt>{label}</dt><dd><strong>{_integer(results['splits'][name]['rows'])}행</strong>"
+                f"<span>노출 {_number(results['splits'][name]['exposure'], 2)}년</span></dd></div>"
+                for name, label in _SPLIT_LABELS.items()
+            )
+            + "</dl>"
+        )
+    return (
+        '<aside class="comparison-population" aria-labelledby="comparison-population-heading">'
+        '<h3 id="comparison-population-heading">모델 비교에 사용한 분할별 분석 범위</h3>'
+        f'{body}<a href="#saved-split-metadata">저장된 분할·출처 확인</a></aside>'
+    )
+
+
 def _provenance(results: dict) -> str:
     study, provenance = results.get("study", {}), results.get("provenance", {})
     context = {
@@ -820,7 +852,7 @@ def _provenance(results: dict) -> str:
     return (
         '<details id="provenance"><summary>데이터·코드·seed·split 출처</summary>'
         "<p>아래 코드 해시는 동결 실험의 분석 코드입니다. 현재 표현 renderer의 해시는 별도 presentation manifest에 기록합니다.</p>"
-        "<pre>"
+        '<pre id="saved-split-metadata" tabindex="0">'
         + _e(json.dumps(context, ensure_ascii=False, indent=2, sort_keys=True))
         + "</pre></details>"
     )
@@ -944,6 +976,11 @@ main {{max-width:1280px; margin:auto; padding:0 clamp(20px,5vw,56px) 48px;}}
 section {{padding:48px 0; border-bottom:1px solid var(--line); scroll-margin-top:24px;}}
 h2 {{font-size:clamp(1.5rem,2.5vw,2.2rem); line-height:1.4; letter-spacing:-.045em; margin:0 0 16px; word-break:keep-all;}} h3 {{font-size:1.1rem;}}
 .section-intro {{display:grid; grid-template-columns:1fr 1.15fr; gap:32px; align-items:start; margin-bottom:24px;}} .section-intro p {{margin:0;}}
+.comparison-population {{padding:18px 0; border-block:1px solid var(--line);}} .comparison-population h3 {{margin:0 0 12px;}}
+.split-population {{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:0 0 14px;}}
+.split-population>div {{padding:10px 14px; background:#eaf0f4; border-left:3px solid var(--accent);}} .split-population dt {{font-weight:650;}}
+.split-population dd {{display:flex; flex-wrap:wrap; gap:2px 14px; margin:3px 0 0; font-variant-numeric:tabular-nums;}}
+.split-population span {{color:var(--muted);}} @media (max-width:650px) {{.split-population {{grid-template-columns:1fr;}}}}
 .analysis-pair {{display:grid; grid-template-columns:1.05fr 1fr; gap:30px; align-items:center; margin:28px 0; padding:24px; background:white; border-radius:10px; border:1px solid var(--line);}} .analysis-pair figure {{margin:0; min-width:0;}}
 .analysis-pair h3 {{margin:0 0 8px;}} .analysis-pair p {{font-size:.87rem; color:var(--muted);}}
 .muted,.run-context,footer {{color:var(--muted);}} .run-context {{display:flex; flex-wrap:wrap; gap:6px 22px; font-size:.82rem; margin:12px 0;}}
@@ -970,7 +1007,7 @@ figure {{margin:24px 0;}} figcaption {{color:var(--muted); font-size:.87rem; mar
 <div class="study-context"><span><strong>{_integer(study.get("rows"))}</strong> 계약 행</span><span>분석 노출 <strong>{_number(_study_exposure(results), 2)}</strong>년</span><span>{"전체 자료 실행" if study.get("sampled") is False else ("표본 실행" if study.get("sampled") is True else "표본 여부 기록 없음")}</span><span>{_e(study.get("data_kind", "기록 없음"))} / seed {_e(study.get("seed", "기록 없음"))}</span></div></header>
 <main id="report-content" tabindex="-1"><section aria-labelledby="selection"><div class="section-intro"><h2 id="selection">어떤 모델이<br>얼마나 덜 틀렸을까?</h2>
 <p>선택 모델: <strong>{_e(_MODEL_LABELS.get(selected, selected))}</strong> (<code>{_e(selected)}</code>). 모델 선택에는 <strong>{_e(study.get("selection_split", "기록 없음"))}</strong> 분할만 사용했습니다. Test results는 선택 이후 평가입니다.</p>
-</div><figure><figcaption>같은 테스트 자료, 같은 노출 가중 기준. 낮은 편차는 이 분할에서 더 작은 예측 오차를 뜻합니다.</figcaption>{comparison}</figure>
+</div>{_comparison_population(results)}<figure><figcaption>같은 테스트 자료, 같은 노출 가중 기준. 낮은 편차는 이 분할에서 더 작은 예측 오차를 뜻합니다.</figcaption>{comparison}</figure>
 {_comparison_table(results)}
 <p class="muted">편차와 가중 MAE는 낮을수록 작게 틀립니다. 관측/예측 비율 1은 합계 일치이며, 집단별 보정이나 조건검사 통과를 의미하지 않습니다.</p>
 <p class="muted">{_EXPOSURE_NOTE}</p>

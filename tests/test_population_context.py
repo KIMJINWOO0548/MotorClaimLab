@@ -53,6 +53,27 @@ def test_full_run_uses_same_complete_split_population():
     assert "120" in context and "84.75" in context and "전체 자료 실행" in context
 
 
+def test_model_comparison_displays_each_validated_split_denominator():
+    results = _sampled()
+    document = render_report(results)
+    support = re.search(r'<aside class="comparison-population".*?</aside>', document, re.S).group()
+    assert all(value in support for value in ("72행", "50.00년", "17.00년", "17.75년"))
+    assert "200.00" not in support
+    assert 'href="#saved-split-metadata"' in support
+    assert 'id="saved-split-metadata"' in document
+    markdown = render_markdown(results)
+    assert "모델 선택 · 검증 | 24 | 17.00" in markdown
+
+
+def test_split_denominators_fail_closed_when_saved_population_totals_disagree():
+    results = _sampled()
+    results["splits"]["test"]["rows"] = 23
+    document = render_report(results)
+    support = re.search(r'<aside class="comparison-population".*?</aside>', document, re.S).group()
+    assert "확인 불가" in support and "<dl" not in support
+    assert "17.75년" not in support and "200.00년" not in support
+
+
 @pytest.mark.parametrize("exposure", [None, True, "17.75", float("nan"), float("inf"), -1, 0])
 def test_invalid_split_exposure_is_unavailable_never_replaced_by_full_input(exposure):
     results = _sampled()
@@ -118,7 +139,7 @@ def test_new_renderer_manifest_tracks_current_source_and_outputs_on_fresh_saved_
     original = {path: path.read_bytes() for path in (source, selection)}
     output = tmp_path / "renderer-3-2"
     manifest = render_saved(source, output, selection)
-    assert manifest["renderer_version"] == "3.5" and manifest["model_execution"] is False
+    assert manifest["renderer_version"] == "3.6" and manifest["model_execution"] is False
     root = Path(__file__).resolve().parents[1]
     for name, expected in manifest["renderer_sources"].items():
         assert hashlib.sha256((root / name).read_bytes()).hexdigest() == expected
