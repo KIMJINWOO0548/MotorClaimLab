@@ -130,7 +130,7 @@ def test_saved_render_preserves_inputs_and_records_separate_renderer(tmp_path, m
     output = tmp_path / "presentation-v3-1"
     manifest = render_saved(source, output, selection)
     assert all(path.read_bytes() == contents for path, contents in before.items())
-    assert manifest["model_execution"] is False and manifest["renderer_version"] == "3.5"
+    assert manifest["model_execution"] is False and manifest["renderer_version"] == "3.6"
     assert manifest["saved_contract"] == "frozen-legacy"
     assert manifest["browser_validation"] == (
         "NOT_RUN at generation; browser verification is recorded separately"
